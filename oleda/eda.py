@@ -10,13 +10,12 @@ from .eda_core import *
 from .eda_core import __cramer_v_corr
 from .eda_pairwise import pairwise_report
 
-
 import warnings
 
 warnings.filterwarnings("ignore")
 
 #=====================#=====================#=====================
-# dataset comparision
+# dataset comparison
 #=====================#=====================#=====================  
 #
 #pairwise report
@@ -163,7 +162,6 @@ def plot_melt(df,feature,target1,target2,end=20):
 
     cat_perc = df[[feature, target1]].groupby([feature],as_index=False).mean()
     cat_perc=pd.merge(cat_perc,cat_count,on=feature)
-    #cat_perc.sort_values(by='Count ', ascending=False, inplace=True)
 
     cat_perc2 = df[[feature, target2]].groupby([feature],as_index=False).mean()
     cat_perc=pd.merge(cat_perc,cat_perc2,on=feature)   
@@ -261,7 +259,7 @@ def plot_cramer_v_corr(df,max_features=20,figsize=(10,10)):
     #features are selected automaticly - categorical or binary  
     #features with too many different values are ignored
     fig, ax = pls.subplots(1,1,figsize=figsize)
-    __cramer_v_corr(df.loc[:,df.apply(pd.Series.nunique) < df.shape[0]/2],ax,10)
+    __cramer_v_corr(df.loc[:,df.apply(pd.Series.nunique) < df.shape[0]/2],ax,max_features)
     pls.show()    
     
     
@@ -341,8 +339,11 @@ def print_features(df,target=None,sorted_features=[]):
         elif feature_type=='Numeric':
             #pairwise_feature_sum_per_day(df1,df2,feature)
             #pairwise_feature_mean_per_day(df1,df2,feature)
-            if cardinality<=25:
+            if cardinality<=30:
                 plot_stats(df,feature,target,30)
+                if target !=None:
+                    pls.scatter(df[feature], df[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
+                    pls.show()
             else:
                 #df[feature].hist() 
                 fig,ax = pls.subplots(1, 2,figsize=(16, 5))
@@ -353,13 +354,17 @@ def print_features(df,target=None,sorted_features=[]):
                 sns.boxplot(df[feature],color='blue',orient='h',ax=ax[1])
                 pls.show()
                 
-                if  target !=None and tg_cardinality < 10:
-                    fig,ax = pls.subplots(1, 2,figsize=(16, 5))
-                    ax[0].scatter(df[feature], df[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
-                    ax[0].xlabel("feature")
-                    ax[0].ylabel("target")
-                    sns.violinplot(x=target, y=feature, data=df, ax=ax[1], inner='quartile')
-                    pls.show()    
+                if  target !=None :
+                    if tg_cardinality < 10:
+                        fig,ax = pls.subplots(1, 2,figsize=(16, 5))
+                        ax[0].scatter(df[feature], df[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
+                        ax[0].xlabel("feature")
+                        ax[0].ylabel("target")
+                        sns.violinplot(x=target, y=feature, data=df, ax=ax[1], inner='quartile')
+                        pls.show()  
+                    else:
+                        pls.scatter(df[feature], df[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
+                        pls.show()
         else:
                                                                    
             print("Time column skip plotting ")

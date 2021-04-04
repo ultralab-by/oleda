@@ -12,13 +12,13 @@ from .eda_core import __cramer_v_corr
 
 #creates html report
 def pairwise_report(df1,df2,target=None,ignore=[],nbrmax=20,full=True):
-    
+
     #detect time columns
     df1 = df1.apply(lambda col: pd.to_datetime(col, errors='ignore') 
               if col.dtypes == object else col, axis=0)
     df2 = df2.apply(lambda col: pd.to_datetime(col, errors='ignore') 
           if col.dtypes == object  else col, axis=0)
-    
+
     #print shap values for each frame predicting targed
     header('Shap values' )
      
@@ -30,7 +30,7 @@ def pairwise_report(df1,df2,target=None,ignore=[],nbrmax=20,full=True):
         sorted_features=sorted_features1 if len(sorted_features1)>len(sorted_features2) else sorted_features2
 
     sorted_features=sorted_features[:nbrmax]
-
+ 
     # if dataframe has timedate index - plot time series
     if target !=None and  df1.index.dtype==np.dtype('datetime64[ns]') and df2.index.dtype==np.dtype('datetime64[ns]'):
         #header again
@@ -42,7 +42,7 @@ def pairwise_report(df1,df2,target=None,ignore=[],nbrmax=20,full=True):
         #pairwise_feature_sum_per_day(df1,df2,target)
     else:
         print('Index is not datetime - skip')
-    
+
     #print each feature stat
     header('Features info' )
     print_features(df1,df2,target,sorted_features)
@@ -50,40 +50,47 @@ def pairwise_report(df1,df2,target=None,ignore=[],nbrmax=20,full=True):
     header('Missed values')
     if full:
         #plot missed vales
-        plot_na_pairwise(df2,df2)
+        plot_na_pairwise(df1,df2)
         print('\n \n ')
         #print columns with % of missing values
         print_na_pairwise(df1,df2)
 
         #for numeric variables only
         header('Pearson correlations' )     
-        plot_correlations_pairwise(df1,df2,10) 
+        plot_correlations_pairwise(df1,df2,nbrmax) 
 
         #correlations of categorical variables
         header('Cramers V staticstics' )    
         #third parameter max features to display
-        plot_cramer_v_corr_pairwise(df1,df2,10)    
+        plot_cramer_v_corr_pairwise(df1,df2,nbrmax)    
 
 def print_features(df1,df2,target=None,sorted_features=[]):
         
     features = sorted_features if len(sorted_features)>0 else list(set(df1.columns.to_list()) & set(df2.columns.to_list()))
 
-    info1 = pd.DataFrame(
-            index=['Type :' ,'Distinct count :', 'Missed %:'],
-            columns=[' '])
-    info2 = pd.DataFrame(
-            index=['Type :' ,'Distinct count :', 'Missed %:'],
-            columns=[' '])
 
     for feature in features:
         if feature==target:
             continue
         print('\n ')
+        
+        info1 = pd.DataFrame(
+                index=['Type :' ,'Distinct count :', 'Missed %:'],
+                columns=[' '])
+        info2 = pd.DataFrame(
+                index=['Type :' ,'Distinct count :', 'Missed %:'],
+                columns=[' '])
+    
         display(HTML("<hr>"))
         display(HTML("<h3 align=\"center\">{}</h3>".format(feature)))
         print('\n ') 
         info1[' '] = get_feature_info(df1,feature)
+        if info1.iloc[0,0]=='Numeric':
+            info1.loc['Mean :',' ']=df1[feature].mean()
+        
         info2[' '] = get_feature_info(df2,feature)
+        if info2.iloc[0,0]=='Numeric':
+            info2.loc['Mean :',' ']=df2[feature].mean()
 
         display_side_by_side([info1.head(),info2.head()],['Frame 1','Frame 2'])
         print('\n ') 
