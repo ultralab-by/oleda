@@ -176,7 +176,7 @@ def missing_values_table(df):
 def header(title):
     print('\n \n')
     display(HTML("<hr>"))
-    display(HTML("<h1 align=\"center\">{}</h1>".format(title)))
+    display(HTML("<h2 align=\"center\">{}</h2>".format(title)))
     print('\n  ') 
     
 #=====================#=====================#=====================#=====================
