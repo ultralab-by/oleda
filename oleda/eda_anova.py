@@ -32,7 +32,9 @@ warnings.filterwarnings("ignore")
 def explore_dataset(df,target,max_card=200):
     
     features = list(set(df.columns.to_list()))
-
+    
+    df=df.dropna()
+    
     for feature in features:
                                                                    
         if feature==target:
@@ -40,7 +42,8 @@ def explore_dataset(df,target,max_card=200):
                                                                    
         feature_type,cardinality,missed = get_feature_info(df,feature)
         
-        if (feature_type=='Categorical' and cardinality<max_card) or feature_type=='Boolean':
+        if (feature_type=='Categorical' and cardinality<max_card and cardinality>1) or feature_type=='Boolean':
+
             if(anova(df,feature,target)):
                 display(HTML("<h3 align=\"center\">{}</h3>".format(feature)))
                 # Tukey HSD test

@@ -14,7 +14,7 @@ import shap
 
 def plot_shap(x, target,ignore=[],nbrmax=20):
     
-    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64[ns]','m8[ns]']
+    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64[ns]','m8[ns]','datetime64[ns, UTC]']
 
     features=x.columns.to_list()
     features.remove(target)
@@ -22,7 +22,7 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
     #          if col.dtypes == object else col, axis=0)
         
     for f in x.columns.to_list():
-        if ((x[f].dtype==np.dtype('datetime64[ns]'))  or (x[f].dtype==np.dtype('m8[ns]'))or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and x[f].dtype not in numerics) ) and f in features:
+        if isTime(x[f].dtype)or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and x[f].dtype not in numerics)  and f in features:
             features.remove(f)
     features=list(set(features)-set(ignore))
 
@@ -186,7 +186,7 @@ def header(title):
 def get_feature_type(dtype):
     if dtype in [np.int16, np.int32, np.int64, np.float16, np.float32, np.float64]:
         return 'Numeric'
-    elif dtype in [np.dtype('datetime64[ns]'),np.dtype('m8[ns]')]:
+    elif isTime(dtype):
         return 'Time'
     elif dtype in [np.bool]:
         return 'Boolean'
@@ -202,4 +202,8 @@ def get_feature_info(df,feature):
     else:
         return "","",""
     
-
+def isTime(dtype):
+    if dtype in [np.dtype('datetime64[ns]'),np.dtype('m8[ns]')] or 'datetime' in str(dtype):   
+        return True
+    return False
+    

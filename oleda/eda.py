@@ -35,7 +35,7 @@ print_report = pairwise_report
 #=====================#=====================#=====================  
 
 #single dataset report
-def report(df,target,ignore=[],nbrmax=20,full=True):
+def report(df,target=None,ignore=[],nbrmax=20,full=True):
      return do_eda(df, target,ignore,nbrmax,full)  
 
     
@@ -135,8 +135,8 @@ def plot_qcuts(df,feature,target,q=None, figsize=(12,6)):
     ax1.set_ylabel('count');
     ax2.set_xlabel(feature); 
     ax2.set_ylabel(target);
-    df.groupby(pd.qcut(df[feature], q=q))[target].count().plot(kind='bar',ax=ax1)
-    df.groupby(pd.qcut(df[feature], q=q))[target].mean().plot(kind='bar',ax=ax2)
+    df.groupby(pd.qcut(df[feature], q=q,duplicates='drop'))[target].count().plot(kind='bar',ax=ax1)
+    df.groupby(pd.qcut(df[feature], q=q,duplicates='drop'))[target].mean().plot(kind='bar',ax=ax2)
     pls.show()    
 
                        
@@ -356,10 +356,22 @@ def print_features(df,target=None,sorted_features=[]):
                 print("Zero variance")
                                                                    
             else:
-                plot_stats(df,feature,target,30)
+                if target != None :
+                    plot_stats(df,feature,target,30)
+                elif cardinality<=40:
+                    fig,ax =  pls.subplots(1, 1,figsize=(9, 5))
+                    pls.hist(df[feature])
+                    pls.xticks(rotation='vertical')
+                    pls.show()
+                else:
+                    fig,ax =  pls.subplots(1, 1,figsize=(9, 5))
+                    f=df[feature].value_counts()[:40].index
+                    pls.hist(df[df[feature].isin(f)][feature])
+                    pls.xticks(rotation='vertical')
+                    pls.show()
                                                                    
                 #count of records with feature=value per day
-                if target != None and  df.index.dtype==np.dtype('datetime64[ns]'):
+                if target != None and  isTime(df.index.dtype):
                     display(HTML("<h3 align=\"center\">Top {} count per day</h3>".format(feature)))
                     plot_ntop_categorical_values_counts(df,feature,target,4)
                 
@@ -419,9 +431,9 @@ def print_features(df,target=None,sorted_features=[]):
                         pls.show()  
                     else:
                         #continues - continues
-                        plot_qcuts(df,feature,target)
+                        #plot_qcuts(df,feature,target)
                         q = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
-                        df['cut']=pd.qcut(df[feature],q=q)
+                        df['cut']=pd.qcut(df[feature],q=q,duplicates='drop')
                         sns.catplot(x=target,y='cut',data=df, orient="h", kind="box") 
                         pls.show()
                         fig,ax = pls.subplots(1, 1,figsize=(8, 5))
@@ -455,12 +467,13 @@ def do_eda(df,target,ignore=[],nbrmax=20,full=True,figsize=(20,4),linewidth=2):
         sorted_features=[]
 
     # if dataframe has timedate index - plot time series
-    if target !=None and  df.index.dtype==np.dtype('datetime64[ns]') :
+    if target !=None and  isTime(df.index.dtype) :
         header('Time series' )
         ax=df[target].resample('1d').mean().plot( grid=True,x_compat=True,figsize=figsize,linewidth=linewidth,label=target)
         pls.title(' {} mean per day '.format(target))
         pls.legend()
         pls.show() 
+    
     
     header('Features' )
     print_features(df,target,sorted_features)
