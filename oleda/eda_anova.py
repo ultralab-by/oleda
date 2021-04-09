@@ -177,17 +177,19 @@ def turkeyHSD(df,feature,target):
     return results_as_pandas[results_as_pandas.reject].sort_values('meandiff',ascending=False) if results_as_pandas.shape[0]>0 and results_as_pandas[results_as_pandas.reject].shape[0]>0 else results_as_pandas
 
 
-def anova(df,feature,target):
+def anova(df,feature,target,verbose=True):
     
     model = ols(target+' ~ C('+feature+')', data=df).fit()
     anova_table = sm.stats.anova_lm(model, typ=2)
-    print(anova_table)
-    print('Anova ' ,anova_table['PR(>F)'].iloc[0], 'OK' if anova_table['PR(>F)'].iloc[0] <0.05 else 'KO')
+    if (verbose):
+        print(anova_table)
+        print('Anova ' ,anova_table['PR(>F)'].iloc[0], 'OK' if anova_table['PR(>F)'].iloc[0] <0.05 else 'KO')
     
     #Shapiro-Wilk test to check the normal distribution of residuals
     w, pvalue = stats.shapiro(model.resid)
-    print('\nShapiro-Wilk test - normal distribution of residuals . ', 'OK' if (pvalue <0.05) else 'KO' )
-    print(w, pvalue)
+    if (verbose):
+        print('\nShapiro-Wilk test - normal distribution of residuals . ', 'OK' if (pvalue <0.05) else 'KO' )
+        print(w, pvalue)
     return ((pvalue<0.05)and(anova_table['PR(>F)'].iloc[0]<0.05))
 
 #=====================#=====================#=====================#=====================

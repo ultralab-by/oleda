@@ -122,18 +122,8 @@ def cramers_corrected_stat(confusion_matrix):
     return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
     
 def __cramer_v_corr(df,ax,max_features=20):
-    
-    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64'] 
-    #keep columns with % of missed less then 60
-    categoricals = df.loc[:, df.isnull().mean() <= .6].select_dtypes(exclude=numerics).columns.to_list()[:max_features]
-    #add binary columns
-    bool_cols = [col for col in df.select_dtypes(include=numerics).columns.to_list() if 
-               df[col].dropna().value_counts().index.isin([0,1]).all()]
-    
-    categoricals.extend(bool_cols)
-    #drop columns with no variance
-    categoricals=[col for col in categoricals if 
-               df[col].dropna().value_counts().shape[0]>1]
+
+    categoricals=get_categorical(df)[:max_features]
 
     correlation_matrix = pd.DataFrame(
         np.zeros((len(categoricals), len(categoricals))),
@@ -153,8 +143,7 @@ def __cramer_v_corr(df,ax,max_features=20):
     #Theil’s U, conditional_entropy (no symetrical)
     #https://towardsdatascience.com/the-search-for-categorical-correlation-a1cf7f1888c9
     #https://github.com/shakedzy/dython/blob/master/dython/nominal.py
- 
-#=====================#=====================#=====================#=====================
+ #=====================#=====================#=====================#=====================
 # nan
 #=====================#=====================#=====================#=====================
 
@@ -173,10 +162,10 @@ def missing_values_table(df):
 # html
 #=====================#=====================#=====================#=====================
 
-def header(title):
+def header(title,sz='h2'):
     print('\n \n')
     display(HTML("<hr>"))
-    display(HTML("<h2 align=\"center\">{}</h2>".format(title)))
+    display(HTML("<{} align=\"center\">{}</{}>".format(sz,title,sz)))
     print('\n  ') 
     
 #=====================#=====================#=====================#=====================
@@ -207,3 +196,17 @@ def isTime(dtype):
         return True
     return False
     
+def get_categorical(df):
+    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64'] 
+    #keep columns with % of missed less then 60
+    categoricals = df.loc[:, df.isnull().mean() <= .6].select_dtypes(exclude=numerics).columns.to_list()
+    #add binary columns
+    bool_cols = [col for col in df.select_dtypes(include=numerics).columns.to_list() if 
+               df[col].dropna().value_counts().index.isin([0,1]).all()]
+    
+    categoricals.extend(bool_cols)
+    
+    #drop columns with no variance
+    categoricals=[col for col in categoricals if 
+               df[col].dropna().value_counts().shape[0]>1]
+    return categoricals

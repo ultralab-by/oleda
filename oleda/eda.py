@@ -9,6 +9,7 @@ import seaborn as sns
 from .eda_core import *
 from .eda_core import __cramer_v_corr
 from .eda_pairwise import pairwise_report
+from .eda_anova import anova,two_way_anova
 
 import warnings
 
@@ -24,7 +25,7 @@ warnings.filterwarnings("ignore")
     # df2      pandas dataframe     second dataset
     # ignore  list                  features to ignore 
     # nbrmax  int                   max number of features (with max shap values) to print
-    # full                          full mode : also prints nan correlations heatmaps
+
 #pairwise_report(df1,df2,target,ignore,nbrmax,full)
 
 #for compatibility
@@ -36,7 +37,7 @@ print_report = pairwise_report
 
 #single dataset report
 def report(df,target=None,ignore=[],nbrmax=20,full=True):
-     return do_eda(df, target,ignore,nbrmax,full)  
+     return do_eda(df, target,ignore,nbrmax)  
 
     
 #shap values
@@ -124,10 +125,10 @@ def plot_cuts(df,feature,target,bins=None, figsize=(12,6)):
     df.groupby(pd.cut(df[feature], bins=bins))[target].mean().plot(kind='bar',ax=ax2)
     pls.show()  
     
-def plot_qcuts(df,feature,target,q=None, figsize=(12,6)):
+def plot_qcuts(df,feature,target,q=None, figsize=(8,4)):
     
     if q==None:
-        q = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,0.9, 1]
     
     fig, (ax1, ax2) = pls.subplots(ncols=2, figsize=figsize)
     pls.title('Histogram of {}'.format(feature)); 
@@ -324,7 +325,14 @@ def print_features(df,target=None,sorted_features=[]):
     features = sorted_features if len(sorted_features)>0 else list(set(df.columns.to_list()))
 
     _,tg_cardinality,_ = get_feature_info(df,target)
+   
+
+    top10=get_top_correlated(df)
+    if target !=None and target not in top10 :
+            top10.append(target)
     
+    fanova=[]
+            
     for feature in features:
                                                                    
         if feature==target:
@@ -385,7 +393,29 @@ def print_features(df,target=None,sorted_features=[]):
                     else:
                         sns.catplot(y=feature,x=target,data=df, orient="h", kind="box")
                     pls.show()
-                    
+            
+            #partitioning
+            if len(top10)>1:
+                depended =[]
+                #to speed up - select 4 most popopular values
+                top=df[feature].value_counts()[:4].index
+                sub=df[df[feature].isin(top)]
+
+                for t in top10:
+                    try:
+                        #check variance 
+                        if anova(sub,feature,t,False):
+                            depended.append(t)
+                    except Exception:
+                        a=0
+
+                if len(depended)>0:
+                    fanova.append(feature)  
+                    if len(depended)>1:
+                        sns.pairplot(sub,vars=depended,hue=feature,corner=True)
+                        pls.show()
+
+                  
         #---------------- Numeric    
         
         elif feature_type=='Numeric':
@@ -422,6 +452,7 @@ def print_features(df,target=None,sorted_features=[]):
                 pls.show()
                 
                 if  target !=None :
+                    
                     if tg_cardinality < 10:
                         fig,ax = pls.subplots(1, 2,figsize=(16, 5))
                         ax[0].scatter(df[feature], df[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
@@ -431,8 +462,8 @@ def print_features(df,target=None,sorted_features=[]):
                         pls.show()  
                     else:
                         #continues - continues
-                        #plot_qcuts(df,feature,target)
-                        q = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+                        plot_qcuts(df,feature,target)
+                        q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1]
                         df['cut']=pd.qcut(df[feature],q=q,duplicates='drop')
                         sns.catplot(x=target,y='cut',data=df, orient="h", kind="box") 
                         pls.show()
@@ -444,10 +475,45 @@ def print_features(df,target=None,sorted_features=[]):
                         
                        
         else:
-                                                                   
+            
             print("Time column skip plotting ")
+            
+    #second order interactions:
+    if False and len(fanova)>1 :
+        
+        header('2nd order Interactions',sz='h3')
 
-def do_eda(df,target,ignore=[],nbrmax=20,full=True,figsize=(20,4),linewidth=2):
+        for ff1 in range(len(fanova)-1):
+            f1=fanova[ff1]
+            for ff2 in range(ff1+1,len(fanova)):
+                f2=fanova[ff2]
+                df[f1+f2]=df[f1]+df[f2]
+                top=df[f1+f2].value_counts()[:10].index
+                sub=df[df[f1+f2].isin(top)]
+                depended=[] 
+                for t in top10:
+                       
+                    try:
+                        #print('\n\n',t)
+                        res=two_way_anova(sub,f1,f2,t)
+                        #print(res)
+                        
+                        if(res.iloc[2]['PR(>F)']<=0.05):
+                            depended.append(t)
+
+                    except Exception:
+                        a=0
+                if len(depended)>0:        
+                    if len(depended)>1: 
+                        sns.pairplot(sub,vars=depended,hue=f1+f2,corner=True)
+                        pls.show()
+                    for t in depended:
+                        g = sns.catplot(x=t, y=f1, row=f2, kind="box", orient="h", height=1.5, aspect=4,data=sub)
+                        pls.show()
+            del df[f1+f2]
+                        
+                        
+def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
     
     #detect time columns
     df = df.apply(lambda col: pd.to_datetime(col, errors='ignore') 
@@ -464,7 +530,7 @@ def do_eda(df,target,ignore=[],nbrmax=20,full=True,figsize=(20,4),linewidth=2):
 
         sorted_features=plot_shap(df,target,ignore=ignore,nbrmax=nbrmax)[:nbrmax]
     else:
-        sorted_features=[]
+        sorted_features=list(set(df.columns.tolist())-set(ignore))
 
     # if dataframe has timedate index - plot time series
     if target !=None and  isTime(df.index.dtype) :
@@ -478,19 +544,89 @@ def do_eda(df,target,ignore=[],nbrmax=20,full=True,figsize=(20,4),linewidth=2):
     header('Features' )
     print_features(df,target,sorted_features)
      
-    if full:
+    #for numeric variables only
+    header('Pearson correlations' )     
+    cx=corr(df,nbrmax) 
 
-        #for numeric variables only
-        header('Pearson correlations' )     
-        cx=corr(df,nbrmax) 
+    #correlations of categorical variables
+    header('Cramers V staticstics' )    
+    #third parameter max features to display
+    plot_cramer_v_corr(df,nbrmax) 
 
-        #correlations of categorical variables
-        header('Cramers V staticstics' )    
-        #third parameter max features to display
-        plot_cramer_v_corr(df,nbrmax) 
-        
-        #plot 10 most correlated features
-        f=list(cx[(cx[0]>0.099)&(cx.level_0!=cx.level_1)]['level_0'].drop_duplicates(keep='first')[:10].values)
-        sns.pairplot(df[f])
-        
+    #plot 10 most correlated features
+    header('Top correlated features' )  
+    f=list(cx[(cx[0]>0.099)&(cx.level_0!=cx.level_1)]['level_0'].drop_duplicates(keep='first')[:10].values)
+    sns.pairplot(df[f])  
+    
     return sorted_features
+
+def get_top_correlated(df,th=0.099,maxcount=10):
+    corr=df.corr()
+    if corr.shape[0]>0:
+        cx=corr.unstack().dropna().abs().sort_values(ascending=False).reset_index()
+        return list(cx[(cx[0]>th)&(cx.level_0!=cx.level_1)]['level_0'].drop_duplicates(keep='first')[:maxcount].values)   
+    else:
+        return []
+
+def interactions(ddf):
+    df=ddf.copy()
+    
+    features =  list(set(df.columns.to_list()))
+   
+    candidates=[]
+    numeric=[]
+    
+    for feature in features:                                                                                                                                                       
+        feature_type,cardinality,missed = get_feature_info(df,feature)
+        
+        if feature_type=='Categorical' or feature_type=='Boolean' and\
+            cardinality < df.shape[0]/2.0 and not df[feature].isnull().values.all()\
+            and cardinality>=2:
+            candidates.append(feature)
+                                                                   
+        elif feature_type=='Numeric':
+            if cardinality> 1:
+                numeric.append(feature)
+                
+            if cardinality < df.shape[0]/2.0 and cardinality>=2 and cardinality < 40:
+                candidates.append(feature)
+            else:
+                q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,0.9, 1]
+                df['   '+feature]=pd.qcut(df[feature], q=q,duplicates='drop')
+                df['   '+feature]=df['   '+feature].astype(str)
+                candidates.append('   '+feature)
+                
+    for ff1 in range(len(candidates)-1):
+        f1=candidates[ff1]
+
+        for ff2 in range(ff1+1,len(candidates)):
+            f2=candidates[ff2]
+
+            df[f1+f2]=df[f1].astype(str)+df[f2].astype(str)
+            top=df[f1+f2].value_counts()[:8].index
+            sub=df[df[f1+f2].isin(top)]
+            depended=[] 
+            for t in numeric:
+                if ('   '+t) in [f1, f2] or t in [f1,f2]:
+                    continue
+
+                try:
+                    #print('\n\n',t)
+                    res=two_way_anova(sub,f1,f2,t)
+                    #print(res)
+
+                    if(res.iloc[2]['PR(>F)']<=0.05):
+                        #print(f1,f2,t)
+                        depended.append(t)
+
+                except Exception:
+                    a=0
+                    
+            if len(depended)>0:        
+                if len(depended)>1: 
+                    sns.pairplot(sub,vars=depended,hue=f1+f2,corner=True)
+                    pls.show()
+                for t in depended:
+                    print(f1+'*'+f2+'='+t)
+                    g = sns.catplot(x=t, y=f1, row=f2, kind="box", orient="h", height=1.5, aspect=4,data=sub)
+                    pls.show()
