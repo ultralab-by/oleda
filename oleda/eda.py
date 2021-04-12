@@ -327,9 +327,7 @@ def print_features(df,target=None,sorted_features=[]):
     _,tg_cardinality,_ = get_feature_info(df,target)
    
 
-    top10=get_top_correlated(df)
-    if target !=None and target not in top10 :
-            top10.append(target)
+    numeric=df.select_dtypes(include=np.number).columns.tolist()
     
     fanova=[]
             
@@ -395,13 +393,13 @@ def print_features(df,target=None,sorted_features=[]):
                     pls.show()
             
             #partitioning
-            if len(top10)>1:
+            if len(numeric)>1:
                 depended =[]
                 #to speed up - select 4 most popopular values
-                top=df[feature].value_counts()[:4].index
+                top=df[feature].value_counts().iloc[:4].index
                 sub=df[df[feature].isin(top)]
 
-                for t in top10:
+                for t in numeric:
                     try:
                         #check variance 
                         if anova(sub,feature,t,False):
@@ -410,8 +408,11 @@ def print_features(df,target=None,sorted_features=[]):
                         a=0
 
                 if len(depended)>0:
+                    print('Anova passed for ',depended)
                     fanova.append(feature)  
                     if len(depended)>1:
+                        tc=get_top_correlated(sub)
+                        depended=list(set(tc)&set(depended))
                         sns.pairplot(sub,vars=depended,hue=feature,corner=True)
                         pls.show()
 
@@ -463,7 +464,7 @@ def print_features(df,target=None,sorted_features=[]):
                     else:
                         #continues - continues
                         plot_qcuts(df,feature,target)
-                        q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1]
+                        q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,1]
                         df['cut']=pd.qcut(df[feature],q=q,duplicates='drop')
                         sns.catplot(x=target,y='cut',data=df, orient="h", kind="box") 
                         pls.show()
@@ -478,39 +479,6 @@ def print_features(df,target=None,sorted_features=[]):
             
             print("Time column skip plotting ")
             
-    #second order interactions:
-    if False and len(fanova)>1 :
-        
-        header('2nd order Interactions',sz='h3')
-
-        for ff1 in range(len(fanova)-1):
-            f1=fanova[ff1]
-            for ff2 in range(ff1+1,len(fanova)):
-                f2=fanova[ff2]
-                df[f1+f2]=df[f1]+df[f2]
-                top=df[f1+f2].value_counts()[:10].index
-                sub=df[df[f1+f2].isin(top)]
-                depended=[] 
-                for t in top10:
-                       
-                    try:
-                        #print('\n\n',t)
-                        res=two_way_anova(sub,f1,f2,t)
-                        #print(res)
-                        
-                        if(res.iloc[2]['PR(>F)']<=0.05):
-                            depended.append(t)
-
-                    except Exception:
-                        a=0
-                if len(depended)>0:        
-                    if len(depended)>1: 
-                        sns.pairplot(sub,vars=depended,hue=f1+f2,corner=True)
-                        pls.show()
-                    for t in depended:
-                        g = sns.catplot(x=t, y=f1, row=f2, kind="box", orient="h", height=1.5, aspect=4,data=sub)
-                        pls.show()
-            del df[f1+f2]
                         
                         
 def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
@@ -561,6 +529,7 @@ def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
     return sorted_features
 
 def get_top_correlated(df,th=0.099,maxcount=10):
+    
     corr=df.corr()
     if corr.shape[0]>0:
         cx=corr.unstack().dropna().abs().sort_values(ascending=False).reset_index()
@@ -568,63 +537,152 @@ def get_top_correlated(df,th=0.099,maxcount=10):
     else:
         return []
 
-def interactions(ddf):
+    
+def interactions2x(ddf,feature=[],target=[]):
+    
     df=ddf.copy()
     
-    features =  list(set(df.columns.to_list()))
+    features = list(set(df.columns.to_list())) if len(feature)==0 else feature
    
     candidates=[]
-    numeric=[]
+    numeric=target.copy()
     
-    for feature in features:                                                                                                                                                       
-        feature_type,cardinality,missed = get_feature_info(df,feature)
+    for f in features:                                                                                                                                                       
+        feature_type,cardinality,missed = get_feature_info(df,f)
         
         if feature_type=='Categorical' or feature_type=='Boolean' and\
-            cardinality < df.shape[0]/2.0 and not df[feature].isnull().values.all()\
+            cardinality < df.shape[0]/2.0 and not df[f].isnull().values.all()\
             and cardinality>=2:
-            candidates.append(feature)
+            candidates.append(f)
                                                                    
         elif feature_type=='Numeric':
-            if cardinality> 1:
-                numeric.append(feature)
+           
+            if len(target)==0 and cardinality> 1:
+                numeric.append(f)
                 
             if cardinality < df.shape[0]/2.0 and cardinality>=2 and cardinality < 40:
-                candidates.append(feature)
+                candidates.append(f)
             else:
                 q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,0.9, 1]
-                df['   '+feature]=pd.qcut(df[feature], q=q,duplicates='drop')
-                df['   '+feature]=df['   '+feature].astype(str)
-                candidates.append('   '+feature)
+                df['cuts__'+f]=pd.qcut(df[f], q=q,duplicates='drop')
+                df['cuts__'+f]=df['cuts__'+f].astype(str)
+                
+                candidates.append('cuts__'+f)
+    fanova={}
+    if len(numeric)<1 or len(candidates)<1:
+        return fanova
+
+    for f1 in candidates:
+            #to speed up - select 4 most popopular values
+            
+            top=df[f1].value_counts().iloc[:4].index
+            sub=df[df[f1].isin(top)]
+            depended=[]
+            for t in numeric:
+                if ('cuts__'+t) ==f1 or t ==f1:
+                    continue
+                    
+                #print(f1,' - ',t)
+                try:
+                    #check variance 
+                    if anova(sub,f1,t,False):
+                        depended.append(t)
+                except Exception as e:
+                    a=0
+                    #print(e)
+
+            print(f1, ' - ',depended,'\n\n\n')   
+            
+            if len(depended)>0:
+                fanova[f1]= depended
+                tc=get_top_correlated(sub)
+                depended=list(set(tc)&set(depended))
+                if len(depended)>1:               
+                    sns.pairplot(sub,vars=depended,hue=f1,corner=True)
+                    pls.show()
+    return fanova
+
+
+def interactions3x(ddf,feature=[],target=[]):
+    
+    df=ddf.copy()
+    
+    features = list(set(df.columns.to_list())) if len(feature)==0 else feature
+   
+    candidates=[]
+    numeric=target.copy()
+    
+    for f in features:                                                                                                                                                       
+        feature_type,cardinality,missed = get_feature_info(df,f)
+        
+        if feature_type=='Categorical' or feature_type=='Boolean' and\
+            cardinality < df.shape[0]/2.0 and not df[f].isnull().values.all()\
+            and cardinality>=2:
+            candidates.append(f)
+                                                                   
+        elif feature_type=='Numeric':
+            if len(target)==0 and cardinality> 1:
+                numeric.append(f)
+                
+            if cardinality < df.shape[0]/2.0 and cardinality>=2 and cardinality < 40:
+                candidates.append(f)
+            else:
+                q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,0.9, 1]
+                df['__'+f]=pd.qcut(df[f], q=q,duplicates='drop')
+                df['__'+f]=df['__'+f].astype(str)
+                
+                candidates.append('__'+f)
                 
     for ff1 in range(len(candidates)-1):
         f1=candidates[ff1]
-
+        top1=df[f1].value_counts().iloc[:10].index
         for ff2 in range(ff1+1,len(candidates)):
+            sub1=df[df[f1].isin(top1)]
             f2=candidates[ff2]
-
-            df[f1+f2]=df[f1].astype(str)+df[f2].astype(str)
-            top=df[f1+f2].value_counts()[:8].index
-            sub=df[df[f1+f2].isin(top)]
+            header(f1+' - '+ f2,sz='h3')
+            
+            #one-to-one
+            if df.groupby(f1)[f2].apply(lambda x: x.nunique() <2 ).all():
+                print ('one-to-one skip')
+                continue
+                
+            print('relation ',df.groupby(f1)[f2].nunique().max(),' : ',df.groupby(f2)[f1].nunique().max())
+            sub1[f1+f2]=sub1[f1].astype(str)+sub1[f2].astype(str)
+            
+            top=sub1[[f1,f2,f1+f2]].dropna()[f2].value_counts()[:10].index
+            sub=sub1[sub1[f2].isin(top)]
+            
             depended=[] 
             for t in numeric:
-                if ('   '+t) in [f1, f2] or t in [f1,f2]:
+                print('\n\n',t)
+                if ('__'+t) in [f1, f2] or t in [f1,f2]:
                     continue
 
                 try:
-                    #print('\n\n',t)
-                    res=two_way_anova(sub,f1,f2,t)
-                    #print(res)
+                    
+                    sns.barplot(x=f1, y=t, hue=f2, data=sub)
+                    pls.show()
+                    
+                    res=two_way_anova(sub[[f1,f2,f1+f2,t]].dropna(),f1,f2,t)
+                    print(res)
 
                     if(res.iloc[2]['PR(>F)']<=0.05):
+                        print('Anova passed')
                         #print(f1,f2,t)
                         depended.append(t)
+                    else:
+                        print('Anova faled to reject')
 
-                except Exception:
+                except Exception as e:
+                    print('nan',e)
                     a=0
                     
+            print(depended)     
+            
             if len(depended)>0:        
                 if len(depended)>1: 
-                    sns.pairplot(sub,vars=depended,hue=f1+f2,corner=True)
+                    top2=sub[[f1,f2,f1+f2]].dropna()[f1+f2].value_counts()[:5].index
+                    sns.pairplot(sub[sub[f1+f2].isin(top2)],vars=depended,hue=f1+f2,corner=True)
                     pls.show()
                 for t in depended:
                     print(f1+'*'+f2+'='+t)
