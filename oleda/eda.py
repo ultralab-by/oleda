@@ -320,15 +320,15 @@ def cramer_v_corr(df,categoricals,figsize=(10,10)):
 #=====================#=====================#=====================#=====================
 
 def print_features(df,target=None,sorted_features=[]):
-    
+
     #explore features selected by shap (sorted_features)
     features = sorted_features if len(sorted_features)>0 else list(set(df.columns.to_list()))
 
     _,tg_cardinality,_ = get_feature_info(df,target)
    
-
     numeric=df.select_dtypes(include=np.number).columns.tolist()
     
+
     fanova=[]
             
     for feature in features:
@@ -423,8 +423,11 @@ def print_features(df,target=None,sorted_features=[]):
             #pairwise_feature_sum_per_day(df1,df2,feature)
             #pairwise_feature_mean_per_day(df1,df2,feature)
             if cardinality<=40:
-                
-                plot_stats(df,feature,target,40)
+                if target !=None :
+                    plot_stats(df,feature,target,40)
+                else:
+                    pls.hist(df[feature])
+                    pls.show()
                 
                 if target !=None and tg_cardinality>2 and cardinality>2 :
                     fig,ax =  pls.subplots(1, 1,figsize=(8, 5))
@@ -465,9 +468,10 @@ def print_features(df,target=None,sorted_features=[]):
                         #continues - continues
                         plot_qcuts(df,feature,target)
                         q = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,1]
-                        df['cut']=pd.qcut(df[feature],q=q,duplicates='drop')
-                        sns.catplot(x=target,y='cut',data=df, orient="h", kind="box") 
+                        df['cuts__'+feature]=pd.qcut(df[feature],q=q,duplicates='drop')
+                        sns.catplot(x=target,y='cuts__'+feature,data=df, orient="h", kind="box") 
                         pls.show()
+                        del df['cuts__'+feature]
                         fig,ax = pls.subplots(1, 1,figsize=(8, 5))
                         pls.scatter(df[feature], df[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
                         ax.set_xlabel(feature)
@@ -603,7 +607,7 @@ def interactions2x(ddf,feature=[],target=[]):
     return fanova
 
 
-def interactions3x(ddf,feature=[],target=[]):
+def interactions3x(ddf,feature=[],target=[],verbose=False):
     
     df=ddf.copy()
     
@@ -659,19 +663,22 @@ def interactions3x(ddf,feature=[],target=[]):
                     continue
 
                 try:
-                    
-                    sns.barplot(x=f1, y=t, hue=f2, data=sub)
-                    pls.show()
-                    
+                                        
                     res=two_way_anova(sub[[f1,f2,f1+f2,t]].dropna(),f1,f2,t)
-                    print(res)
+                    if verbose:
+                        print(res)
 
                     if(res.iloc[2]['PR(>F)']<=0.05):
                         print('Anova passed')
                         #print(f1,f2,t)
                         depended.append(t)
+                        sns.barplot(x=f1, y=t, hue=f2, data=sub)
+                        pls.show()
                     else:
-                        print('Anova faled to reject')
+                        if verbose:
+                            sns.barplot(x=f1, y=t, hue=f2, data=sub)
+                            pls.show()                            
+                        print('Anova faled to reject => no difference ')
 
                 except Exception as e:
                     print('nan',e)
@@ -679,9 +686,9 @@ def interactions3x(ddf,feature=[],target=[]):
                     
             print(depended)     
             
-            if len(depended)>0:        
+            if len(depended)>0:         
                 if len(depended)>1: 
-                    top2=sub[[f1,f2,f1+f2]].dropna()[f1+f2].value_counts()[:5].index
+                    top2=sub[[f1,f2,f1+f2]].dropna()[f1+f2].value_counts().index[:5]
                     sns.pairplot(sub[sub[f1+f2].isin(top2)],vars=depended,hue=f1+f2,corner=True)
                     pls.show()
                 for t in depended:

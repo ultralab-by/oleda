@@ -31,8 +31,11 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
     categorical_features=x[features].select_dtypes(exclude=numerics).columns.to_list()
 
     #change type to categorical for lightgbm
+    backup={}
     for c in categorical_features:
+        backup[c]=x[c].dtype
         x[c] = x[c].astype('category')
+
     target_type,target_cardinality,_=get_feature_info(x,target)
     binary_target=(target_type=='Numeric' and target_cardinality==2)
     if binary_target:
@@ -96,7 +99,8 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
 
     #restore type
     for c in categorical_features:
-        x[c] = x[c].astype('object')
+        x[c] = x[c].astype(backup[c])
+        
     return sorted_features
 
 #=====================#=====================#=====================#=====================
@@ -192,7 +196,7 @@ def get_feature_info(df,feature):
         return "","",""
     
 def isTime(dtype):
-    if dtype in [np.dtype('datetime64[ns]'),np.dtype('m8[ns]')] or 'datetime' in str(dtype):   
+    if '[ns]'  in str(dtype) or dtype in [np.dtype('datetime64[ns]'),np.dtype('m8[ns]')] or 'datetime' in str(dtype) :   
         return True
     return False
     
