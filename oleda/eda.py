@@ -9,7 +9,7 @@ import seaborn as sns
 from .eda_core import *
 from .eda_core import __cramer_v_corr
 from .eda_pairwise import pairwise_report
-from .eda_anova import anova,two_way_anova
+from .eda_anova import anova,two_way_anova,turkeyHSD
 
 import warnings
 
@@ -23,10 +23,10 @@ warnings.filterwarnings("ignore")
     # Compare two datasets:
     # df1      pandas dataframe     first dataset 
     # df2      pandas dataframe     second dataset
-    # ignore  list                  features to ignore 
-    # nbrmax  int                   max number of features (with max shap values) to print
+    # ignore  list                  features to ignore (optional)
+    # nbrmax  int                   max number of top features (with max shap values) to print
 
-#pairwise_report(df1,df2,target,ignore,nbrmax,full)
+#pairwise_report(df1,df2,target,ignore=[],nbrmax,full)
 
 #for compatibility
 print_report = pairwise_report      
@@ -52,16 +52,16 @@ def  plot_shaps(df, target, ignore=[], nbrmax=20):
 #=====================#=====================#=====================
 # time series plots
 #=====================#=====================#=====================
-    
-# plots n top feature values counts per day   
-def plot_ntop_categorical_values_counts(df,feature,target,nbr_max=4,figsize=(20,4),linewidth=2.0,period="1d"):
+
+def plot_ntop_categorical_values_(df,feature,target, nbr_max, figsize, linewidth, period, method_name):
     values=df[feature].value_counts()[:nbr_max].index.to_list()
     if  len(values)==0:
         return
     ax=df[df[feature]==values[0]][target].resample(period).count().plot(x_compat=True,figsize=figsize, grid=True,linewidth=linewidth)
     legend=[values[0]]
     for i in range(1,len(values)):
-        df[df[feature]==values[i]][target].resample(period).count().plot(x_compat=True,figsize=figsize,ax=ax, grid=True, linewidth=2.0,title='{} per day'.format(feature))
+        resampler=df[df[feature]==values[i]][target].resample(period)
+        getattr(resampler,method_name)().plot(x_compat=True, figsize=figsize,ax=ax, grid=True, linewidth=2.0,title='{} per day'.format(feature))
         legend.append(values[i])
 
     if len(values) > 1:
@@ -69,45 +69,29 @@ def plot_ntop_categorical_values_counts(df,feature,target,nbr_max=4,figsize=(20,
     ax.lines[0].set_linestyle("--")
     pls.legend(legend, bbox_to_anchor=(1.2, 0))
     pls.show()
+    
+# plots n top feature values counts per day   
+def plot_ntop_categorical_values_counts(df,feature,target, nbr_max=4, figsize=(20,4), linewidth=2.0, period="1d"):
+
+    plot_ntop_categorical_values_(df,feature,target, nbr_max, figsize, linewidth, period, 'count')
+    return
     
     
 def plot_ntop_categorical_values_sums(df,feature,target,nbr_max=4,figsize=(20,4),linewidth=2.0,period="1d"):
-    values=df[feature].value_counts()[:nbr_max].index.to_list()
-    if  len(values)==0:
-        return
-    ax=df[df[feature]==values[0]][target].resample(period).sum().plot(x_compat=True,figsize=figsize, grid=True,linewidth=2.0)
-    legend=[values[0]]
-    for i in range(1,len(values)):
-        df[df[feature]==values[i]][target].resample(period).sum().plot(x_compat=True,figsize=figsize,ax=ax, grid=True, linewidth=linewidth,title='{} sum per {} per day'.format(target,feature))
-        legend.append(values[i])
+    
+    plot_ntop_categorical_values_(df,feature,target, nbr_max, figsize, linewidth, period, 'sum')
+    return
 
-    if len(values) > 1:
-        ax.lines[1].set_linestyle(":")
-    ax.lines[0].set_linestyle("--")
-    pls.legend(legend, bbox_to_anchor=(1.2, 0))
-    pls.show()
     
 def plot_ntop_categorical_values_means(df,feature,target,nbr_max=4,figsize=(20,4),linewidth=2.0,period="1d"):
     
-    values=df[feature].value_counts()[:nbr_max].index.to_list()
-    if  len(values)==0:
-        return
-    ax=df[df[feature]==values[0]][target].resample(period).mean().plot(x_compat=True,figsize=figsize, grid=True,linewidth=linewidth )
-    legend=list()
-    legend.append(values[0])
-    for i in range(1,len(values)):
-        df[df[feature]==values[i]][target].resample(period).mean().plot(x_compat=True,figsize=figsize,ax=ax, grid=True, linewidth=linewidth,title='{} % mean per {} per day'.format(target,feature))
-        legend.append(values[i])
+    plot_ntop_categorical_values_(df,feature,target, nbr_max, figsize, linewidth, period, 'mean')
+    return    
 
-    if len(values) > 1:
-        ax.lines[1].set_linestyle(":")
-    ax.lines[0].set_linestyle("--")
-    pls.legend(legend,bbox_to_anchor=(1.2, 0))
-    pls.show()
     
     
 #=====================#=====================#=====================#=====================
-# continues
+# numerical continues
 #=====================#=====================#=====================#=====================
 
 def plot_cuts(df,feature,target,bins=None, figsize=(12,6)):
@@ -137,15 +121,12 @@ def plot_qcuts(df,feature,target,q=None, figsize=(8,4)):
     ax2.set_xlabel(feature); 
     ax2.set_ylabel(target);
     df.groupby(pd.qcut(df[feature], q=q,duplicates='drop'))[target].count().plot(kind='bar',ax=ax1)
-    df.groupby(pd.qcut(df[feature], q=q,duplicates='drop'))[target].mean().plot(kind='bar',ax=ax2)
+    df.groupby(pd.qcut(df[feature], q=q,duplicates='drop'))[target].mean( ).plot(kind='bar',ax=ax2)
     pls.show()    
-
-                       
+                      
 #=====================#=====================#=====================#=====================
 # categorical 
 #=====================#=====================#=====================#=====================
-
-import seaborn as sns
 
 def plot_stats(df,feature,target,max_nbr=20):
     end=max_nbr
@@ -222,6 +203,7 @@ def plot_na(df):
     pls.xlabel("Features")
     
 def print_na(df,max_row=20):
+    
     mdf=missing_values_table(df)
     if mdf.shape[0]:
         print(missing_values_table(df).head(max_row))
@@ -236,6 +218,7 @@ def corr(df,maxnbr=20,figsize=None):
     #
     # plots correlation heatmap for all numerical features
     #
+    
     #numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
     #l=df.select_dtypes(include=numerics).columns.to_list()
     corr=df.corr()
@@ -542,7 +525,7 @@ def get_top_correlated(df,th=0.099,maxcount=10):
         return []
 
     
-def interactions2x(ddf,feature=[],target=[]):
+def interactions2x(ddf,feature=[],target=[],maxnbr=4):
     
     df=ddf.copy()
     
@@ -579,7 +562,7 @@ def interactions2x(ddf,feature=[],target=[]):
     for f1 in candidates:
             #to speed up - select 4 most popopular values
             
-            top=df[f1].value_counts().iloc[:4].index
+            top=df[f1].value_counts().iloc[:maxnbr].index
             sub=df[df[f1].isin(top)]
             depended=[]
             for t in numeric:
@@ -591,6 +574,11 @@ def interactions2x(ddf,feature=[],target=[]):
                     #check variance 
                     if anova(sub,f1,t,False):
                         depended.append(t)
+                        if maxnbr>6:
+                            pls.figure(figsize=(14, 8))
+                        sns.barplot(x=f1, y=t, data=sub)
+                        pls.show()
+                        print(turkeyHSD(sub,f1,t))
                 except Exception as e:
                     a=0
                     #print(e)
@@ -607,7 +595,7 @@ def interactions2x(ddf,feature=[],target=[]):
     return fanova
 
 
-def interactions3x(ddf,feature=[],target=[],verbose=False):
+def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=10):
     
     df=ddf.copy()
     
@@ -619,7 +607,7 @@ def interactions3x(ddf,feature=[],target=[],verbose=False):
     for f in features:                                                                                                                                                       
         feature_type,cardinality,missed = get_feature_info(df,f)
         
-        if feature_type=='Categorical' or feature_type=='Boolean' and\
+        if (feature_type=='Categorical' or feature_type=='Boolean') and\
             cardinality < df.shape[0]/2.0 and not df[f].isnull().values.all()\
             and cardinality>=2:
             candidates.append(f)
@@ -639,7 +627,7 @@ def interactions3x(ddf,feature=[],target=[],verbose=False):
                 
     for ff1 in range(len(candidates)-1):
         f1=candidates[ff1]
-        top1=df[f1].value_counts().iloc[:10].index
+        top1=df[f1].value_counts().iloc[:maxnbr].index
         for ff2 in range(ff1+1,len(candidates)):
             sub1=df[df[f1].isin(top1)]
             f2=candidates[ff2]
@@ -653,7 +641,7 @@ def interactions3x(ddf,feature=[],target=[],verbose=False):
             print('relation ',df.groupby(f1)[f2].nunique().max(),' : ',df.groupby(f2)[f1].nunique().max())
             sub1[f1+f2]=sub1[f1].astype(str)+sub1[f2].astype(str)
             
-            top=sub1[[f1,f2,f1+f2]].dropna()[f2].value_counts()[:10].index
+            top=sub1[[f1,f2,f1+f2]].dropna()[f2].value_counts()[:maxnbr].index
             sub=sub1[sub1[f2].isin(top)]
             
             depended=[] 
@@ -672,10 +660,16 @@ def interactions3x(ddf,feature=[],target=[],verbose=False):
                         print('Anova passed')
                         #print(f1,f2,t)
                         depended.append(t)
+                        if maxnbr>6:
+                            pls.figure(figsize=(14, 8))
                         sns.barplot(x=f1, y=t, hue=f2, data=sub)
                         pls.show()
+                        
+                        print(turkeyHSD(sub,f1+f2,t))
                     else:
                         if verbose:
+                            if maxnbr>6:
+                                pls.figure(figsize=(14, 8))
                             sns.barplot(x=f1, y=t, hue=f2, data=sub)
                             pls.show()                            
                         print('Anova faled to reject => no difference ')
@@ -683,12 +677,12 @@ def interactions3x(ddf,feature=[],target=[],verbose=False):
                 except Exception as e:
                     print('nan',e)
                     a=0
-                    
-            print(depended)     
+            if len(depended)>0:        
+                print(depended)     
             
             if len(depended)>0:         
                 if len(depended)>1: 
-                    top2=sub[[f1,f2,f1+f2]].dropna()[f1+f2].value_counts().index[:5]
+                    top2=sub[[f1,f2,f1+f2]].dropna()[f1+f2].value_counts().index[:maxnbr]
                     sns.pairplot(sub[sub[f1+f2].isin(top2)],vars=depended,hue=f1+f2,corner=True)
                     pls.show()
                 for t in depended:
