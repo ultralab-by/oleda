@@ -14,7 +14,7 @@ import shap
 
 def plot_shap(x, target,ignore=[],nbrmax=20):
     
-    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64[ns]','m8[ns]','datetime64[ns, UTC]']
+    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
 
     features=x.columns.to_list()
     features.remove(target)
@@ -23,7 +23,7 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
         
     for f in x.columns.to_list():
         
-        if (isTime(x[f].dtype)or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and x[f].dtype not in numerics))  and f in features:
+        if (isTime(x[f].dtype) or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and str(x[f].dtype) not in numerics))  and f in features:
             features.remove(f)
     features=list(set(features)-set(ignore))
 

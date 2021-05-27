@@ -4,6 +4,7 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import math
 import pandas as pd
+from .eda_core import safe_convert
 
 def isNumeric(S):
         numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
@@ -27,13 +28,15 @@ def chi2_selector(df,y,kmax=16):
     for c in columns:
         if (df[c] >= 0).all() & np.array_equal(df[c], df[c].astype(int)):
             positive.append(c)
-    
-    chi_selector = SelectKBest(chi2, k=kmax)
-    chi_selector.fit(df[positive], y)
-    chi_support = chi_selector.get_support()
-    chi_support = [True if i in np.array(positive[chi_support]) else False for i in df.columns.tolist()]
-    chi_feature = df.loc[:,chi_support].columns.tolist()
-    print( '\n chi2 test selected features \n\t',chi_feature)
+    if len(positive)>0:
+        chi_selector = SelectKBest(chi2, k=min(kmax,len(positive)))
+        chi_selector.fit(df[positive], y)
+        chi_support = chi_selector.get_support()
+        chi_support = [True if i in np.array(positive)[chi_support] else False for i in df.columns.tolist()]
+        chi_feature = df.loc[:,chi_support].columns.tolist()
+        print( '\n chi2 test selected features \n\t',chi_feature)
+    else:
+        chi_support = [ False for i in df.columns.tolist()]
     return chi_support
 
 # Pearson Correlation
@@ -244,10 +247,15 @@ def run_all(df,y,nbrmax=16):
     
     pd.set_option('display.max_rows', None)
     
+    df=df.copy()
     #lightgbm fails on datetime features
-    df = df.apply(lambda col: pd.to_datetime(col, errors='ignore') 
-              if col.dtypes == object else col, axis=0)
+    df = df.apply(lambda col: safe_convert(col) if col.dtypes == object else col, axis=0)
     
+    with pd.option_context('mode.use_inf_as_na', True):    
+        if df.isnull().values.any():
+            print('Warning: dataframe contains nan or inf , please fix or drop them to obtain better results. \n')
+            df=df.fillna(0)
+            
     backup={}
     cat=[]
     numeric=[]

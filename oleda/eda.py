@@ -587,9 +587,10 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
                         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
                         pls.show()
                         turkey=turkeyHSD(sub,f1,t)
-                        if turkey.size[0]>0:
+                        if turkey.shape[0]>0:
                             print('turkeyHSD')
                             print(turkey)
+                            print('\n')
                 except Exception as e:
                     a=0
                     #print(e)
@@ -676,17 +677,22 @@ def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=10):
                         #print(f1,f2,t)
                         depended.append(t)
                         if maxnbr>6:
-                            pls.figure(figsize=(14, 8))
-                        sns.barplot(x=f1, y=t, hue=f2, data=sub)
+                            fig, ax = pls.subplots(figsize=(14, 8))
+                        else:
+                            fig, ax = pls.subplots(figsize=(8, 6)) 
+                        sns.barplot(x=f1, y=t, hue=f2, data=sub,ax=ax)
+                        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
                         pls.show()
                         print('turkeyHSD')
                         print(turkeyHSD(sub,f1+f2,t))
                     else:
                         if verbose:
                             if maxnbr>6:
-                                pls.figure(figsize=(14, 8))
-                            bar=sns.barplot(x=f1, y=t, hue=f2, data=sub)
-                            bar.set_xticklabels(chart.get_xticklabels(), rotation=45, horizontalalignment='right')
+                                fig, ax = pls.subplots(figsize=(14, 8))
+                            else:
+                                fig, ax = pls.subplots(figsize=(8, 6)) 
+                            bar=sns.barplot(x=f1, y=t, hue=f2, data=sub,ax=ax)
+                            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
                             pls.show()                            
                         print('Anova faled to reject => no difference ')
 
