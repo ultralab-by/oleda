@@ -529,6 +529,11 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
     
     df=ddf.copy()
     
+    with pd.option_context('mode.use_inf_as_na', True):    
+        if df.isnull().values.any():
+            print('Warning: dataframe contains nan or inf , please fix or drop them to obtain better results. \n')
+            df=df.fillna(0)
+    
     features = list(set(df.columns.to_list())) if len(feature)==0 else feature
    
     candidates=[]
@@ -573,19 +578,20 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
                 try:
                     #check variance 
                     if anova(sub,f1,t,False):
+                        header(f1+' - '+ t,sz='h3')
                         depended.append(t)
                         if maxnbr>6:
                             pls.figure(figsize=(14, 8))
                         sns.barplot(x=f1, y=t, data=sub)
                         pls.show()
+                        print('turkeyHSD')
                         print(turkeyHSD(sub,f1,t))
                 except Exception as e:
                     a=0
                     #print(e)
-
-            print(f1, ' - ',depended,'\n\n\n')   
-            
+          
             if len(depended)>0:
+                print(f1, ' - ',depended,'\n\n\n') 
                 fanova[f1]= depended
                 tc=get_top_correlated(sub)
                 depended=list(set(tc)&set(depended))
@@ -598,6 +604,11 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
 def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=10):
     
     df=ddf.copy()
+    
+    with pd.option_context('mode.use_inf_as_na', True):    
+        if df.isnull().values.any():
+            print('Warning: dataframe contains nan or inf , please fix or drop them to obtain better results. \n')
+            df=df.fillna(0)
     
     features = list(set(df.columns.to_list())) if len(feature)==0 else feature
    
@@ -664,7 +675,7 @@ def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=10):
                             pls.figure(figsize=(14, 8))
                         sns.barplot(x=f1, y=t, hue=f2, data=sub)
                         pls.show()
-                        
+                        print('turkeyHSD')
                         print(turkeyHSD(sub,f1+f2,t))
                     else:
                         if verbose:

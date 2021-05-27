@@ -106,11 +106,12 @@ def rfe_selector_(X_norm,y,n_features_to_select=16):
 from sklearn.ensemble import ExtraTreesClassifier,ExtraTreesRegressor
 
 # feature extraction
-def extra_tree_selector(df,y,minimpotance=0.1):
+def extra_tree_selector(df,y,n_features_to_select=15):
     numeric=df.select_dtypes(include=[np.number]).columns.tolist()
     model = ExtraTreesClassifier() if sorted(y.dropna().unique()) == [0, 1] else ExtraTreesRegressor()
     model.fit(df[numeric],y)
-    extra_tree_support=list(model.feature_importances_>minimpotance)
+    minimpotance=sorted(model.feature_importances_)[n_features_to_select-1]
+    extra_tree_support=list(model.feature_importances_>=minimpotance)
     extra_tree_support = [True if i in np.array(numeric)[extra_tree_support] else False for i in df.columns.tolist()]
     extra_tree_features = df.loc[:,extra_tree_support].columns.tolist()
     print( '\n extra tree selected features \n\t',extra_tree_features)
@@ -259,6 +260,7 @@ def run_all(df,y,nbrmax=16):
             cat.append(c)
     #no time columns        
     nt=list(set(numeric)|set( cat))
+    nbrmax=min(nbrmax,len(numeric))
     
     if len(cat)>0:
         print('Warning all tests but LightGBM and shap are performed on numeric features only. Please encode \n' ,cat,' \n')
@@ -269,7 +271,7 @@ def run_all(df,y,nbrmax=16):
                                          'RFE':rfe_selector_(df[nt],y,nbrmax),
                                          'l1':l1_selector(df[nt],y,'mean',nbrmax),
                                          'Random Forest': random_forest_selector(df[nt],y, '1.15*median',nbrmax), 
-                                         'Extra Trees Classifier': extra_tree_selector(df[nt],y,minimpotance=0.03),
+                                         'Extra Trees Classifier': extra_tree_selector(df[nt],y,nbrmax),
                                          'ANOVA':anova_selector(df[nt],y,nbrmax),   
                                          'LightGBM': lightgbm_selector(df[nt],y,'1.15*mean', nbrmax),
                                          'shap':shap_selector(df[nt],y,nbrmax),
