@@ -31,7 +31,7 @@ def chi2_selector(df,y,kmax=16):
     chi_selector = SelectKBest(chi2, k=kmax)
     chi_selector.fit(df[positive], y)
     chi_support = chi_selector.get_support()
-    chi_support = [True if i in positive[chi_support] else False for i in df.columns.tolist()]
+    chi_support = [True if i in np.array(positive[chi_support]) else False for i in df.columns.tolist()]
     chi_feature = df.loc[:,chi_support].columns.tolist()
     print( '\n chi2 test selected features \n\t',chi_feature)
     return chi_support
@@ -42,19 +42,19 @@ def chi2_selector(df,y,kmax=16):
 #Normalization: no
 #Impute missing values: yes
     
-def cor_selector(X, y,kmax=16):
+def cor_selector(df, y,kmax=16):
     cor_list = []
     nc=[]
     # calculate the correlation with y for each feature
-    for i in X.columns.tolist():
-        if isNumeric(X[i]):
-            cor = np.corrcoef(X[i], y)[0, 1]
+    for i in df.columns.tolist():
+        if isNumeric(df[i]):
+            cor = np.corrcoef(df[i], y)[0, 1]
             cor_list.append(cor)
             nc.append(i)
     # replace NaN with 0
     cor_list = [0 if np.isnan(i) else i for i in cor_list]
-    cor_feature = X[nc].iloc[:,np.argsort(np.abs(cor_list))[-kmax:]].columns.tolist()
-    cor_support = [True if i in cor_feature else False for i in  X.columns.tolist()]
+    cor_feature = df[nc].iloc[:,np.argsort(np.abs(cor_list))[-kmax:]].columns.tolist()
+    cor_support = [True if i in cor_feature else False for i in  df.columns.tolist()]
     print('\n pearson correlation selected features \n\t', cor_feature)
     return cor_support
 

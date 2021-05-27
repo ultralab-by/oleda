@@ -14,10 +14,8 @@ from .eda_core import __cramer_v_corr
 def pairwise_report(df1,df2,target=None,ignore=[],nbrmax=20,full=True):
 
     #detect time columns
-    df1 = df1.apply(lambda col: pd.to_datetime(col, errors='ignore') 
-              if col.dtypes == object else col, axis=0)
-    df2 = df2.apply(lambda col: pd.to_datetime(col, errors='ignore') 
-          if col.dtypes == object  else col, axis=0)
+    df1 = df1.apply(lambda col: safe_convert(col) if col.dtypes == object else col, axis=0)
+    df2 = df2.apply(lambda col: safe_convert(col) if col.dtypes == object else col, axis=0)
 
     #print shap values for each frame predicting targed
     header('Shap values' )

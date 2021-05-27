@@ -22,7 +22,8 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
     #          if col.dtypes == object else col, axis=0)
         
     for f in x.columns.to_list():
-        if isTime(x[f].dtype)or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and x[f].dtype not in numerics)  and f in features:
+        
+        if (isTime(x[f].dtype)or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and x[f].dtype not in numerics))  and f in features:
             features.remove(f)
     features=list(set(features)-set(ignore))
 
@@ -214,3 +215,10 @@ def get_categorical(df):
     categoricals=[col for col in categoricals if 
                df[col].dropna().value_counts().shape[0]>1]
     return categoricals
+
+def safe_convert(s):
+    try:
+        return pd.to_datetime(s, errors='ignore') 
+    except:
+        a=0
+    return s

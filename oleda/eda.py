@@ -349,18 +349,18 @@ def print_features(df,target=None,sorted_features=[]):
                     plot_stats(df,feature,target,30)
                 elif cardinality<=40:
                     fig,ax =  pls.subplots(1, 1,figsize=(9, 5))
-                    pls.hist(df[feature])
+                    df[feature].hist()
                     pls.xticks(rotation='vertical')
                     pls.show()
                 else:
                     fig,ax =  pls.subplots(1, 1,figsize=(9, 5))
                     f=df[feature].value_counts()[:40].index
-                    pls.hist(df[df[feature].isin(f)][feature])
+                    df[df[feature].isin(f)][feature].hist()
                     pls.xticks(rotation='vertical')
                     pls.show()
                                                                    
                 #count of records with feature=value per day
-                if target != None and  isTime(df.index.dtype):
+                if target != None and  isTime(df.index.dtype) and df.index.nunique()>2:
                     display(HTML("<h3 align=\"center\">Top {} count per day</h3>".format(feature)))
                     plot_ntop_categorical_values_counts(df,feature,target,4)
                 
@@ -471,8 +471,7 @@ def print_features(df,target=None,sorted_features=[]):
 def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
     
     #detect time columns
-    df = df.apply(lambda col: pd.to_datetime(col, errors='ignore') 
-              if col.dtypes == object else col, axis=0)
+    df = df.apply(lambda col: safe_convert(col) if col.dtypes == object else col, axis=0)
     
     header('Missed values' )
     print_na(df)
@@ -488,7 +487,7 @@ def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
         sorted_features=list(set(df.columns.tolist())-set(ignore))
 
     # if dataframe has timedate index - plot time series
-    if target !=None and  isTime(df.index.dtype) :
+    if target !=None and  isTime(df.index.dtype) and df.index.nunique()> 2:
         header('Time series' )
         ax=df[target].resample('1d').mean().plot( grid=True,x_compat=True,figsize=figsize,linewidth=linewidth,label=target)
         pls.title(' {} mean per day '.format(target))
@@ -581,11 +580,16 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
                         header(f1+' - '+ t,sz='h3')
                         depended.append(t)
                         if maxnbr>6:
-                            pls.figure(figsize=(14, 8))
-                        sns.barplot(x=f1, y=t, data=sub)
+                            fig, ax = pls.subplots(figsize=(14, 8))
+                        else:
+                            fig, ax = pls.subplots(figsize=(8, 6))                            
+                        sns.barplot(x=f1, y=t, data=sub,ax=ax)
+                        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
                         pls.show()
-                        print('turkeyHSD')
-                        print(turkeyHSD(sub,f1,t))
+                        turkey=turkeyHSD(sub,f1,t)
+                        if turkey.size[0]>0:
+                            print('turkeyHSD')
+                            print(turkey)
                 except Exception as e:
                     a=0
                     #print(e)
@@ -681,7 +685,8 @@ def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=10):
                         if verbose:
                             if maxnbr>6:
                                 pls.figure(figsize=(14, 8))
-                            sns.barplot(x=f1, y=t, hue=f2, data=sub)
+                            bar=sns.barplot(x=f1, y=t, hue=f2, data=sub)
+                            bar.set_xticklabels(chart.get_xticklabels(), rotation=45, horizontalalignment='right')
                             pls.show()                            
                         print('Anova faled to reject => no difference ')
 
