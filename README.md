@@ -2,25 +2,25 @@
 
  Exploratory Data Analysis with python.
  
- Automatic report generation from a pandas DataFrame.
- Datasets comparision.
- Insights from data.
+- Automatic report generation from a pandas DataFrame.
+- Datasets comparision.
+- Insights from data.
 
 
 
 Usage/installation
 ------------------
-to install oleda
+to install oleda:
 ```bash
  sudo python3 setup.py install
 ```
-Examples
+Examples/Usage
 --------
 
 to explore single dataset and create report just type:
 ```python
-from oleda import eda
-oleeda.report(df)
+import oleda
+oleda.report(df)
 ```
 report contains:
 - missing values statistics
@@ -35,17 +35,38 @@ dataset can be tested against an target variable (binary (0,1) or continues):
 ```python
 oleda.report(df,target,ignore=[],nbrmax=20)
 ```
-nbrmax number of most important features selected by shap are explored
+in this case plots that show correlation with targed are added for each feature
+features are sorterted according to their impotantce by shap (https://github.com/slundberg/shap)
+nbrmax number of most important features selected by shap to be explored
 features need to be ignored can be added in ignore list 
-all featers are tested against the target feature
+
+also two datasets can be compared:
+```python   
+oleda.pairwise_report(df1,df2,ignore=[],nbrmax=20)
+```
+first oleda find by shap most significant features that distinguish these datasets
+then prints their statistics side by side to show the difference
+
+Example using Titanic dataset :
+https://github.com/Banuba/oleda/blob/1ea82833d355a1cd45f52ea9376973600488629e/example/Titanic-oleda.ipynb
+
+plots description:
+
+1. number and persent of missed values per feature:
+
+<h2 align="center">Missed values</h2>
+      
+              Missing Values  % of Total Values
+    Cabin                687               77.1
+    Age                  177               19.9
+    Embarked               2                0.2
 
 plots for categorical features:
-
-- histogram , representation of the distribution of data
+- histogram , representation of the distribution of feature
 ![](README_files/output_2_10.png)
-- pair plot of 10 most correlated features, which significantly varies ( ANOVA ) on values of this categorecal feature colored according to features values:
+- pair plot of 10 most correlated features, which significantly varies ( ANOVA ) on values of this categorecal feature, colored according to features values:
 ![](README_files/output_2_19.png)
-- if target feature is set then barplot with target mean on feature values is displayed side by side with histogram
+- if target feature is set (for example 'Survived' ) then barplot with target mean on feature values is displayed side by side with feature histogram
 ![](README_files/output_3_25.png)
 etc
 
@@ -55,13 +76,12 @@ plots for numerical features:
 - if target feature is set , scatter plot and violine (if target is binary ) or catplot are added:
 ![](README_files/output_3_38.png)
  
-two datasets can be compared:
-```python   
-oleda.pairwise_report(df1,df2,ignore=[],nbrmax=20)
-```
-first oleda find by shap most significant features that distinguish these datasets
-then prints their statistics side by side
-for example to compare survived not survived subsets of Titanic dataset one can run:
+feature correllation heatmap
+![](README_files/output_2_74.png)
+Cramers V staticstics
+![](README_files/output_2_79.png)
+
+to compare survived not survived subsets of Titanic dataset one can run:
 
 ```python   
 oleda.pairwise_report(df[df['Survived']==0],df[df['Survived']==1],ignore=['Survived'])
