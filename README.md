@@ -61,7 +61,7 @@ plots description:
     Age                  177               19.9
     Embarked               2                0.2
 
-plots for categorical features:
+2. plots for categorical features:
 - histogram , representation of the distribution of feature
 ![](README_files/output_2_10.png)
 - pair plot of 10 most correlated features, which significantly varies ( ANOVA ) on values of this categorecal feature, colored according to features values:
@@ -70,15 +70,19 @@ plots for categorical features:
 ![](README_files/output_3_25.png)
 etc
 
-plots for numerical features:
+3. plots for numerical features:
 - distribution plot and box plot are displayed:
 ![](README_files/output_2_52.png)
-- if target feature is set , scatter plot and violine (if target is binary ) or catplot are added:
+- if target feature is set , scatter plot and violine (if target is binary ) or catplot are added (depends on target type):
 ![](README_files/output_3_38.png)
+![](README_files/output_4_17.png)
+- variables also are splited on bins based on quantiles and plotted against target:
+![](README_files/output_4_23.png)
+![](README_files/output_4_24.png)
  
-feature correllation heatmap
+4. feature correllation heatmap
 ![](README_files/output_2_74.png)
-Cramers V staticstics
+5. Cramers V staticstics
 ![](README_files/output_2_79.png)
 
 to compare survived not survived subsets of Titanic dataset one can run:
@@ -87,12 +91,14 @@ to compare survived not survived subsets of Titanic dataset one can run:
 oleda.pairwise_report(df[df['Survived']==0],df[df['Survived']==1],ignore=['Survived'])
 ```
 result will contain plots like:
+- shap importance information (https://github.com/slundberg/shap)
 
 ![](README_files/output_7_4.png)
 ![](README_files/output_7_5.png)
+- features plots from both dasets side by side:
 ![](README_files/output_7_24.png)
 
-etc
+and more...
 
 to create 2nd order interactions plots:
 ```python 
@@ -123,4 +129,8 @@ to create 3nd order interactions plots:
 ```python 
 eda.interactions3x(df,maxnbr=6)
 ```
+![](README_files/output_5_192.png)
 
+![](README_files/output_5_209.png)
+
+![](README_files/output_5_198.png)
