@@ -8,7 +8,7 @@
 
 
 
-Usage/installation
+Installation
 ------------------
 to install oleda:
 ```bash
@@ -82,6 +82,7 @@ etc
  
 4. feature correllation heatmap
 ![](README_files/output_2_74.png)
+
 5. Cramers V staticstics
 ![](README_files/output_2_79.png)
 
@@ -127,10 +128,83 @@ maxnbr - max feature values to test and plot (affects speed)
 
 to create 3nd order interactions plots:
 ```python 
-eda.interactions3x(df,maxnbr=6)
+oleda.interactions3x(df,maxnbr=6)
 ```
-![](README_files/output_5_192.png)
 
 ![](README_files/output_5_209.png)
 
-![](README_files/output_5_198.png)
+etc
+
+or to check specific features only:
+
+```python 
+oleda.interactions3x(df,feature=['Sex','Pclass'],target=['Survived','Age','Fare'],maxnbr=10)
+```
+
+
+         Sex - Pclass
+   
+      
+    relation  3  :  2
+    
+    
+     Survived
+    Anova passed
+
+
+![png](output_10_4.png)
+
+
+    turkeyHSD
+              group2  meandiff  p-adj   lower   upper  reject
+    group1                                                   
+    male1      male2   -0.2114  0.001 -0.3548 -0.0681    True
+    male1      male3   -0.2334  0.001 -0.3476 -0.1192    True
+    female3    male2   -0.3426  0.001 -0.4807 -0.2044    True
+    female3    male3   -0.3646  0.001 -0.4721 -0.2570    True
+    female2  female3   -0.4211  0.001 -0.5749 -0.2672    True
+    female1  female3   -0.4681  0.001 -0.6120 -0.3242    True
+    female2    male1   -0.5522  0.001 -0.7108 -0.3936    True
+    female1    male1   -0.5992  0.001 -0.7482 -0.4503    True
+    female2    male2   -0.7636  0.001 -0.9261 -0.6012    True
+    female2    male3   -0.7856  0.001 -0.9230 -0.6482    True
+    female1    male2   -0.8107  0.001 -0.9638 -0.6576    True
+    female1    male3   -0.8326  0.001 -0.9588 -0.7065    True
+    
+    
+     Age
+    Anova faled to reject => no difference 
+    
+    
+     Fare
+    Anova passed
+
+
+![png](output_10_6.png)
+
+
+    turkeyHSD
+              group2  meandiff  p-adj     lower    upper  reject
+    group1                                                      
+    female3    male1   51.1073  0.001   37.4329  64.7817    True
+    female2    male1   45.2560  0.001   29.0164  61.4956    True
+    female1    male1  -38.8997  0.001  -54.1512 -23.6482    True
+    male1      male2  -47.4843  0.001  -62.1669 -32.8018    True
+    male1      male3  -54.5645  0.001  -66.2614 -42.8676    True
+    female1  female2  -84.1557  0.001 -101.2985 -67.0128    True
+    female1    male2  -86.3840  0.001 -102.0598 -70.7082    True
+    female1  female3  -90.0070  0.001 -104.7427 -75.2712    True
+    female1    male3  -93.4642  0.001 -106.3859 -80.5425    True
+    ['Survived', 'Fare']
+
+![png](output_10_8.png)
+
+    Sex*Pclass=Survived
+
+![png](output_10_10.png)
+
+    Sex*Pclass=Fare
+
+![png](output_10_12.png)
+
+

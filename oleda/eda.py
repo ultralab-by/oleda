@@ -7,7 +7,7 @@ import seaborn as sns
 
 
 from .eda_core import *
-from .eda_core import __cramer_v_corr
+from .eda_core import cramer_v_corr,plot_cramer_v_corr
 from .eda_pairwise import pairwise_report
 from .eda_anova import anova,two_way_anova,turkeyHSD
 
@@ -36,8 +36,8 @@ print_report = pairwise_report
 #=====================#=====================#=====================  
 
 #single dataset report
-def report(df,target=None,ignore=[],nbrmax=20,full=True):
-     return do_eda(df, target,ignore,nbrmax)  
+def report(df,target=None,ignore=[],nbrmax=20):
+    do_eda(df,target,ignore,nbrmax)  
 
     
 #shap values
@@ -128,21 +128,18 @@ def plot_qcuts(df,feature,target,q=None, figsize=(8,4)):
 # categorical 
 #=====================#=====================#=====================#=====================
 
-def plot_stats(df,feature,target,max_nbr=20):
+def plot_stats(df,feature,target,max_nbr=20,sort='Count '):
     end=max_nbr
-    cat_count = df[feature].value_counts()
-    cat_count = pd.DataFrame({feature: cat_count.index,'Count ': cat_count.values})
-    cat_count.sort_values(by='Count ', ascending=False, inplace=True)
+    cat_count = df[feature].value_counts().reset_index()
+    cat_count.columns = [feature,'Count ']
+    cat_count.sort_values(by=sort, ascending=False, inplace=True)
 
     cat_perc = df[[feature, target]].groupby([feature],as_index=False).mean()
     cat_perc=pd.merge(cat_perc,cat_count,on=feature)
-    cat_perc.sort_values(by='Count ', ascending=False, inplace=True)
+    cat_perc.sort_values(by=sort, ascending=False, inplace=True)
     
-    hs=len(cat_count[:max_nbr])
-    if(hs<=40):
-        fig, (ax1, ax2) = pls.subplots(ncols=2, figsize=(12,6))
-    else:
-        fig, (ax1, ax2) = pls.subplots(nrows=2, figsize=(12,14))
+    size=(12,6) if len(cat_count[:max_nbr]) <=40 else (12,14)
+    fig, (ax1, ax2) = pls.subplots(ncols=2, figsize=size)
         
     sns.set_color_codes("pastel")
     s = sns.barplot(ax=ax1, x = feature, y="Count ",order=cat_count[feature][:max_nbr],data=cat_count[:max_nbr])
@@ -158,8 +155,8 @@ def plot_stats(df,feature,target,max_nbr=20):
 
 def plot_melt(df,feature,target1,target2,end=20):
     
-    cat_count = df[feature].value_counts()
-    cat_count = pd.DataFrame({feature: cat_count.index,'Count ': cat_count.values})
+    cat_count = df[feature].value_counts().reset_index()
+    cat_count.columns =[feature,'Count ']
     cat_count.sort_values(by='Count ', ascending=False, inplace=True)
 
     cat_perc = df[[feature, target1]].groupby([feature],as_index=False).mean()
@@ -191,7 +188,7 @@ def plot_melt(df,feature,target1,target2,end=20):
 
 def plot_na(df):
     
-    pls.style.use('seaborn-talk')
+    #pls.style.use('seaborn-talk')
 
     fig = pls.figure(figsize=(18,6))
     miss = pd.DataFrame((df.isnull().sum())*100/df.shape[0]).reset_index()
@@ -218,25 +215,22 @@ def corr(df,maxnbr=20,figsize=None):
     #
     # plots correlation heatmap for all numerical features
     #
-    
-    #numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-    #l=df.select_dtypes(include=numerics).columns.to_list()
     corr=df.corr()
     cx=corr.abs().unstack().sort_values(ascending=False).reset_index().dropna() 
-    f=list(cx[cx.level_0!=cx.level_1]['level_0'].drop_duplicates(keep='first')[:maxnbr].values)
+    lst=list(cx[cx.level_0!=cx.level_1]['level_0'].drop_duplicates(keep='first')[:maxnbr].values)
     #show most correlated values
     if figsize==None:
-        x=min(len(f),20)
-        figsize=(x,x)
+        size=min(len(lst),20)
+        figsize=(size,size)
     fig, ax = pls.subplots(1,1,figsize=figsize)
-    sns.heatmap( corr[corr.index.isin(f)][f], cmap = pls.cm.RdYlBu_r, vmin = -0.25, annot = True, vmax = 0.6)
+    sns.heatmap( corr[corr.index.isin(lst)][lst], cmap = pls.cm.RdYlBu_r, vmin = -0.25, annot = True, vmax = 0.6)
     pls.title('Correlation Heatmap')
     pls.show() 
     return cx
 
 #plots correlation heatmap for features from the list 
 #show all features correlation without filtering
-def corr_(df,features,figsize=(20,20)):
+def corr_x(df,features,figsize=(20,20)):
     if len(features)>=2:
         fig, ax = pls.subplots(1,1,figsize=figsize)            
         sns.heatmap(df[features].corr(), cmap = pls.cm.RdYlBu_r, vmin = -0.25, annot = True, vmax = 0.6)
@@ -244,60 +238,14 @@ def corr_(df,features,figsize=(20,20)):
         pls.show()
         
 #plots correlation heatmap between features from two lists        
-def corr__(df,features_x,features_y,figsize=(20,20)):
+def corr_2x(df,features_x,features_y,figsize=(20,20)):
     c=features_x.copy()
     c.extend(features_y)
     fig, ax = pls.subplots(1,1,figsize=figsize)
     sns.heatmap(df[c].corr()[features_y].T[features_x], cmap = pls.cm.RdYlBu_r, vmin = -0.25, annot = True, vmax = 0.6)
     pls.title('Correlation Heatmap')
     pls.show()    
-    
-    
-#=====================#=====================#=====================#=====================
-# cramers V
-#=====================#=====================#=====================#=====================
-
-import scipy.stats as ss
-import itertools
-import seaborn as sns
-
-    #Theil’s U, conditional_entropy (no symetrical)
-    #https://towardsdatascience.com/the-search-for-categorical-correlation-a1cf7f1888c9
-    #https://github.com/shakedzy/dython/blob/master/dython/nominal.py
-
-def plot_cramer_v_corr(df,max_features=20,figsize=(10,10)):
-    # plot features correlation (Theil’s U, conditional_entropy) heatmap
-    #max_features max features to display
-    #features are selected automaticly - categorical or binary  
-    #features with too many different values are ignored
-    fig, ax = pls.subplots(1,1,figsize=figsize)
-    __cramer_v_corr(df.loc[:,df.apply(pd.Series.nunique) < df.shape[0]/2],ax,max_features)
-    pls.show()    
-    
-    
-def cramer_v_corr(df,categoricals,figsize=(10,10)):
-    
-    # plot categorical or binary features specifyed in categoricals list 
-    # correlation (Theil’s U, conditional_entropy)  heatmap   
-    
-    fig, ax = pls.subplots(1,1,figsize=figsize)
-
-    correlation_matrix = pd.DataFrame(
-        np.zeros((len(categoricals), len(categoricals))),
-        index=categoricals,
-        columns=categoricals
-    )
-
-    for col1, col2 in itertools.combinations(categoricals, 2):
-        idx1, idx2 = categoricals.index(col1), categoricals.index(col2)
-        correlation_matrix.iloc[idx1, idx2] = cramers_corrected_stat(pd.crosstab(df[col1], df[col2]))
-        correlation_matrix.iloc[idx2, idx1] = correlation_matrix.iloc[idx1, idx2]
-
-    ax = sns.heatmap(correlation_matrix, annot=True, ax=ax); 
-    ax.set_title("Cramer V Correlation between Variables");
-    pls.show() 
-
-    
+       
 #=====================#=====================#=====================#=====================
 # report
 #=====================#=====================#=====================#=====================
@@ -466,8 +414,7 @@ def print_features(df,target=None,sorted_features=[]):
             
             print("Time column skip plotting ")
             
-                        
-                        
+                                            
 def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
     
     #detect time columns
@@ -505,12 +452,16 @@ def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
     #correlations of categorical variables
     header('Cramers V staticstics' )    
     #third parameter max features to display
-    plot_cramer_v_corr(df,nbrmax) 
+    plot_cramer_v_corr(df,max_features=nbrmax) 
 
     #plot 10 most correlated features
     header('Top correlated features' )  
-    f=list(cx[(cx[0]>0.099)&(cx.level_0!=cx.level_1)]['level_0'].drop_duplicates(keep='first')[:10].values)
-    sns.pairplot(df[f])  
+    f=list(cx[(cx[0]>0.099)&(cx.level_0!=cx.level_1)]['level_0'].drop_duplicates(keep='first')[:6].values)
+    g=sns.pairplot(df[f])  
+    for ax in g.axes.flatten():
+        ax.set_xlabel(ax.get_xlabel(), rotation = 90)
+        ax.set_ylabel(ax.get_ylabel(), rotation = 0)
+        ax.yaxis.get_label().set_horizontalalignment('right')
     
     return sorted_features
 
@@ -606,7 +557,7 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
     return fanova
 
 
-def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=10):
+def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=6):
     
     df=ddf.copy()
     

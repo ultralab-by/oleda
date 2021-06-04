@@ -5,11 +5,7 @@ import pandas as pd
 from IPython.display import display, HTML
 import seaborn as sns
 
-
 from .eda_core import *
-from .eda_core import __cramer_v_corr
-from .eda_pairwise import pairwise_report
-
 
 import statsmodels.api as sm
 from statsmodels.formula.api import ols

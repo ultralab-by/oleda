@@ -7,7 +7,7 @@ from IPython.display import display, HTML
 import seaborn as sns
 
 from .eda_core import *
-from .eda_core import __cramer_v_corr
+from .eda_core import plot_cramer_v_corr
 
 
 #creates html report
@@ -144,7 +144,7 @@ def print_features(df1,df2,target=None,sorted_features=[]):
        
 def plot_shap_pairwise(df1, df2,ignore=[],nbrmax=20):
     
-    target='target_'
+    target='fake_target_547454889'
     x=df1.copy()
     x[target]=0
     xx=df2.copy()
@@ -155,8 +155,8 @@ def plot_shap_pairwise(df1, df2,ignore=[],nbrmax=20):
 
 def plot_cramer_v_corr_pairwise(df1,df2,max_features=20):
     fig, ax = pls.subplots(1,2,figsize=(40,20))
-    __cramer_v_corr(df1.loc[:,df1.apply(pd.Series.nunique) < df1.shape[0]/2],ax[0],10)
-    __cramer_v_corr(df2.loc[:,df2.apply(pd.Series.nunique) < df2.shape[0]/2],ax[1],10) 
+    plot_cramer_v_corr(df1,10,ax[0])
+    plot_cramer_v_corr(df2,10,ax[1]) 
     pls.show()
     
 def plot_correlations_pairwise(df1,df2,maxnbr=20):
@@ -234,7 +234,7 @@ def pairwise_scatter_plot(df1,df2,feature,target, figsize=(12,6)):
     ax1.scatter(df1[feature], df1[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
     ax2.scatter(df2[feature], df2[target], marker='.', alpha=0.7, s=30, lw=0,  edgecolor='k')
     pls.show()     
- 
+
 #=====================#=====================#=====================#=====================
 # categorical 
 #=====================#=====================#=====================#=====================

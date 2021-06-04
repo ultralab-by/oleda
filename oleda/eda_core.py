@@ -8,25 +8,25 @@ import seaborn as sns
 from lightgbm import LGBMClassifier,LGBMRegressor
 import lightgbm as lgb
 import shap
+
 #=====================#=====================#=====================#=====================
 # shap 
 #=====================#=====================#=====================#=====================
 
 def plot_shap(x, target,ignore=[],nbrmax=20):
     
-    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
-
     features=x.columns.to_list()
     features.remove(target)
-    #x = x.apply(lambda col: pd.to_datetime(col, errors='ignore') 
-    #          if col.dtypes == object else col, axis=0)
-        
+    
+    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
+    
+    #doesn't work on time columns, remove id columns (all values are different), columns with all nulls 
     for f in x.columns.to_list():
         
         if (isTime(x[f].dtype) or x[f].isnull().values.all() or (len(x[f].unique())>x.shape[0]/2.0 and str(x[f].dtype) not in numerics))  and f in features:
             features.remove(f)
+            
     features=list(set(features)-set(ignore))
-
 
     #list of categorical features
     categorical_features=x[features].select_dtypes(exclude=numerics).columns.to_list()
@@ -39,6 +39,7 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
 
     target_type,target_cardinality,_=get_feature_info(x,target)
     binary_target=(target_type=='Numeric' and target_cardinality==2)
+    
     if binary_target:
         clf = LGBMClassifier(
                              objective='binary'
@@ -55,15 +56,13 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
                             , nrounds = 500 
                             )
     else:
-        clf = LGBMRegressor(
-                             #objective='regression'
+        clf = LGBMRegressor(                           
                              n_estimators=100
                             , min_data_in_leaf = 10
                             , min_sum_hessian_in_leaf = 10
                             , feature_fraction = 0.9
                             , bagging_fraction = 1
                             , bagging_freq = 1                     
-                            #, metric='auc'
                             , learning_rate = 0.03
                             , num_leaves = 19
                             , num_threads = 2
@@ -72,8 +71,7 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
     clf.fit(x[features], x[target])#,categorical_feature=categorical_features)
     
     shap_values = shap.TreeExplainer(clf.booster_).shap_values(x[features])
-    shap.summary_plot(shap_values, x[features],
-                      max_display=30, auto_size_plot=True)
+    shap.summary_plot(shap_values, x[features], max_display=30, auto_size_plot=True)
     
     if binary_target:
         vals= np.abs(shap_values).mean(0)
@@ -107,10 +105,12 @@ def plot_shap(x, target,ignore=[],nbrmax=20):
 #=====================#=====================#=====================#=====================
 # cramers V
 #=====================#=====================#=====================#=====================
-
+#Theil’s U, conditional_entropy (no symetrical)
+#https://towardsdatascience.com/the-search-for-categorical-correlation-a1cf7f1888c9
+#https://github.com/shakedzy/dython/blob/master/dython/nominal.py
+   
 import scipy.stats as ss
 import itertools
-
 
 def cramers_corrected_stat(confusion_matrix):
     """ calculate Cramers V statistic for categorical-categorical association.
@@ -126,10 +126,12 @@ def cramers_corrected_stat(confusion_matrix):
     kcorr = k - ((k-1)**2)/(n-1)
     return np.sqrt(phi2corr / min( (kcorr-1), (rcorr-1)))
     
-def __cramer_v_corr(df,ax,max_features=20):
+def cramer_v_corr(df,categoricals,ax=None,figsize=(10,10)):
 
-    categoricals=get_categorical(df)[:max_features]
-
+    fig=None
+    if ax==None:
+        fig, ax = pls.subplots(1,1,figsize=figsize)
+        
     correlation_matrix = pd.DataFrame(
         np.zeros((len(categoricals), len(categoricals))),
         index=categoricals,
@@ -141,27 +143,61 @@ def __cramer_v_corr(df,ax,max_features=20):
         correlation_matrix.iloc[idx1, idx2] = cramers_corrected_stat(pd.crosstab(df[col1], df[col2]))
         correlation_matrix.iloc[idx2, idx1] = correlation_matrix.iloc[idx1, idx2]
 
-
     ax = sns.heatmap(correlation_matrix, annot=True, ax=ax); 
     ax.set_title("Cramer V Correlation between Variables");
+
+    if fig!=None:#local figure
+        pls.show()
+
+def get_categorical(df):
+    
+    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64','m8[ns]'] 
+    
+    #keep columns with % of missed less then 60
+    categoricals = df.loc[:, df.isnull().mean() <= .6].select_dtypes(exclude=numerics).columns.to_list()
+    
+    #add binary columns
+    bool_cols = [col for col in df.select_dtypes(include=numerics).columns.to_list() if 
+               df[col].dropna().value_counts().index.isin([0,1]).all()]
+    
+    categoricals.extend(bool_cols)
+    
+    #drop columns with no variance and with too much variance (id etc) 
+    categoricals=[col for col in categoricals if 
+               df[col].dropna().nunique() >1 and df[col].nunique() < df.shape[0]/2]
+    
+    return categoricals
+
+
+def plot_cramer_v_corr(df,max_features=20,ax=None):
+    # plot features correlation (Theil’s U, conditional_entropy) heatmap
+    #max_features max features to display
+    #features are selected automaticly - categorical or binary  
+    #features with too many different values are ignored
+    
+    categorical=get_categorical(df)[:max_features]
+
+    if len(categorical)>1:
+        cramer_v_corr(df,categorical,ax)
 
     #Theil’s U, conditional_entropy (no symetrical)
     #https://towardsdatascience.com/the-search-for-categorical-correlation-a1cf7f1888c9
     #https://github.com/shakedzy/dython/blob/master/dython/nominal.py
- #=====================#=====================#=====================#=====================
+    #https://stackoverflow.com/a/46498792/5863503
+    
+#=====================#=====================#=====================#=====================
 # nan
 #=====================#=====================#=====================#=====================
 
-
 def missing_values_table(df):
     
-    mis_val = df.isnull().sum()
-    mis_val_percent = 100 * df.isnull().sum() / len(df)
-    mis_val_table = pd.concat([mis_val, mis_val_percent], axis=1)
-    mis_val_table = mis_val_table.rename(columns = {0 : 'Missing Values', 1 : '% of Total Values'})
-    mis_val_table = mis_val_table[mis_val_table.iloc[:,1] != 0].sort_values('% of Total Values', ascending=False).round(1)
+    missing = df.isnull().sum()
+    percent = 100 * missing / len(df)
+    missing = pd.concat([missing, percent], axis=1)
+    missing.columns = ['Missing', '% of Total']
+    missing = missing[missing.iloc[:,1] != 0].sort_values('% of Total', ascending=False).round(1)
 
-    return mis_val_table   
+    return missing   
 
 #=====================#=====================#=====================#=====================
 # html
@@ -196,25 +232,13 @@ def get_feature_info(df,feature):
     else:
         return "","",""
     
+#=====================#=====================#=====================#=====================
+# to find time columns 
+#=====================#=====================#=====================#=====================
 def isTime(dtype):
-    if '[ns]'  in str(dtype) or dtype in [np.dtype('datetime64[ns]'),np.dtype('m8[ns]')] or 'datetime' in str(dtype) :   
+    if '[ns]' in str(dtype) or 'datetime' in str(dtype) :   
         return True
     return False
-    
-def get_categorical(df):
-    numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64','datetime64'] 
-    #keep columns with % of missed less then 60
-    categoricals = df.loc[:, df.isnull().mean() <= .6].select_dtypes(exclude=numerics).columns.to_list()
-    #add binary columns
-    bool_cols = [col for col in df.select_dtypes(include=numerics).columns.to_list() if 
-               df[col].dropna().value_counts().index.isin([0,1]).all()]
-    
-    categoricals.extend(bool_cols)
-    
-    #drop columns with no variance
-    categoricals=[col for col in categoricals if 
-               df[col].dropna().value_counts().shape[0]>1]
-    return categoricals
 
 def safe_convert(s):
     try:
