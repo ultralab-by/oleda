@@ -152,7 +152,7 @@ oleda.interactions3x(df,feature=['Sex','Pclass'],target=['Survived','Age','Fare'
     Anova passed
 
 
-![png](output_10_4.png)
+![png](README_files/output_10_4.png)
 
 
     turkeyHSD
@@ -180,7 +180,7 @@ oleda.interactions3x(df,feature=['Sex','Pclass'],target=['Survived','Age','Fare'
     Anova passed
 
 
-![png](output_10_6.png)
+![png](README_files/output_10_6.png)
 
 
     turkeyHSD
@@ -197,14 +197,14 @@ oleda.interactions3x(df,feature=['Sex','Pclass'],target=['Survived','Age','Fare'
     female1    male3  -93.4642  0.001 -106.3859 -80.5425    True
     ['Survived', 'Fare']
 
-![png](output_10_8.png)
+![png](README_files/output_10_8.png)
 
     Sex*Pclass=Survived
 
-![png](output_10_10.png)
+![png](README_files/output_10_10.png)
 
     Sex*Pclass=Fare
 
-![png](output_10_12.png)
+![png](README_files/output_10_12.png)
 
 
