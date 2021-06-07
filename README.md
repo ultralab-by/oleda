@@ -30,7 +30,7 @@ report contains:
 - pair plot for most correlated features
 - if dataframe index is valid datetime index, time series plots are added to the report
 
-[Titanic dataset report example](README_files/Titanic_report.md)
+see  [Titanic dataset report example](README_files/Titanic_report.md)
 
 dataset can be tested against an target variable (binary (0,1) or continues):  
 
@@ -42,15 +42,26 @@ features are sorterted according to their impotantce by [shap](https://github.co
 nbrmax number of most important features selected by shap to be explored
 features need to be ignored can be added in ignore list 
 
+see  [Titanic dataset report example with 'Survived' target](README_files/Titanic_report_tg.md)
+
 also two datasets can be compared:
 ```python   
 oleda.pairwise_report(df1,df2,ignore=[],nbrmax=20)
 ```
+
+```python
+oleda.pairwise_report(df[df['Survived']==0],df[df['Survived']==1],ignore=['Survived'])
+```
+
 first oleda find by shap most significant features that distinguish these datasets
 then prints their statistics side by side to show the difference
 
-Example using Titanic dataset :
-[jupiter notebook ](https://github.com/Banuba/oleda/blob/1ea82833d355a1cd45f52ea9376973600488629e/example/Titanic-oleda.ipynb)
+see  [Titanic dataset pairwise report example](README_files/Titanic_report_pairwise.md)
+
+
+All examples can be found in [jupiter notebook ](https://github.com/Banuba/oleda/blob/1ea82833d355a1cd45f52ea9376973600488629e/example/Titanic-oleda.ipynb)
+
+
 
 plots description:
 
@@ -76,7 +87,7 @@ etc
 - distribution plot and box plot are displayed:
 ![](README_files/output_2_52.png)
 - if target feature is set , scatter plot and violine (if target is binary ) or catplot are added (depends on target type):
-![](README_files/output_3_38.png)
+![](README_files/output_33_38.png)
 ![](README_files/output_4_17.png)
 - variables also are splited on bins based on quantiles and plotted against target:
 ![](README_files/output_4_23.png)
