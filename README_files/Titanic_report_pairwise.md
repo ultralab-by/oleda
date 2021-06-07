@@ -1,3 +1,9 @@
+```python
+import oleda
+import pandas as pd
+df=pd.read_csv('titanic.csv')
+oleda.pairwise_report(df[df['Survived']==0],df[df['Survived']==1],ignore=['Survived'])
+```
 <hr>
 
 
@@ -53,7 +59,6 @@
 ![png](output_12_14.png)
 
 
-    Index is not datetime - skip
     
      
     
@@ -82,9 +87,9 @@
 
     
     Frame 1                         Frame 2
-    Type :	            Categorical	Type :	            Categorical
-    Distinct count :	2	        Distinct count :	2
-    Missed %:	        0.000000    Missed %:	        0.000000  
+    Type :              Categorical Type :              Categorical
+    Distinct count :    2           Distinct count :    2
+    Missed %:           0.000000    Missed %:           0.000000  
 
 
 ![png](output_12_24.png)
@@ -106,10 +111,10 @@
      
 
     Frame 1                         Frame 2
-    Type :	            Numeric	    Type :	            Numeric
-    Distinct count :	3	        Distinct count :	3
-    Missed %:	        0.000000    Missed %:	        0.000000  
-    Mean :	            2.531876    Mean :	            1.950292
+    Type :              Numeric     Type :              Numeric
+    Distinct count :    3           Distinct count :    3
+    Missed %:           0.000000    Missed %:           0.000000  
+    Mean :              2.531876    Mean :              1.950292
 
     
      
@@ -137,10 +142,10 @@
 
 
     Frame 1                         Frame 2
-    Type :	            Numeric	    Type :	            Numeric
-    Distinct count :	177	        Distinct count :	153
-    Missed %:	        0.000000    Missed %:	        0.000000  
-    Mean :	            22.117887   Mean :	            48.395408
+    Type :              Numeric     Type :              Numeric
+    Distinct count :    177         Distinct count :    153
+    Missed %:           0.000000    Missed %:           0.000000  
+    Mean :              22.117887   Mean :              48.395408
 
  
 
@@ -175,10 +180,10 @@
 
 
     Frame 1                         Frame 2
-    Type :	            Numeric	    Type :	            Numeric
-    Distinct count :	78	        Distinct count :	66
-    Missed %:	        22.768670   Missed %:	        15.204678 
-    Mean :	            30.626179   Mean :	            28.343690 
+    Type :              Numeric     Type :              Numeric
+    Distinct count :    78          Distinct count :    66
+    Missed %:           22.768670   Missed %:           15.204678 
+    Mean :              30.626179   Mean :              28.343690 
 
 
     
@@ -209,10 +214,10 @@
      
 
     Frame 1                         Frame 2
-    Type :	            Numeric	    Type :	            Numeric
-    Distinct count :	549	        Distinct count :	342
-    Missed %:	        0.000000    Missed %:	        0.000000 
-    Mean :	            447.016393  Mean :	            444.368421 
+    Type :              Numeric     Type :              Numeric
+    Distinct count :    549         Distinct count :    342
+    Missed %:           0.000000    Missed %:           0.000000 
+    Mean :             447.016393  Mean :              444.368421 
 
   
 
@@ -243,9 +248,9 @@
      
 
     Frame 1                         Frame 2
-    Type :	            Categorical	Type :	            Categorical
-    Distinct count :	3	        Distinct count :	4
-    Missed %:	        0.000000    Missed %:	        0.584795 
+    Type :              Categorical Type :              Categorical
+    Distinct count :    3           Distinct count :    4
+    Missed %:           0.000000    Missed %:           0.584795 
 
 
     
@@ -273,10 +278,10 @@
 
 
     Frame 1                         Frame 2
-    Type :	            Numeric	    Type :	            Numeric
-    Distinct count :	7	        Distinct count :	5
-    Missed %:	        0.000000    Missed %:	        0.000000 
-    Mean :	            0.553734    Mean :	            0.473684 
+    Type :              Numeric     Type :              Numeric
+    Distinct count :    7           Distinct count :    5
+    Missed %:           0.000000    Missed %:           0.000000 
+    Mean :              0.553734    Mean :              0.473684 
    
 
 
@@ -306,10 +311,10 @@
 
 
     Frame 1                         Frame 2
-    Type :	            Numeric	    Type :	            Numeric
-    Distinct count :	7	        Distinct count :	5
-    Missed %:	        0.000000    Missed %:	        0.000000 
-    Mean :	            0.329690    Mean :	            0.464912   
+    Type :              Numeric     Type :              Numeric
+    Distinct count :    7           Distinct count :    5
+    Missed %:           0.000000    Missed %:           0.000000 
+    Mean :              0.329690    Mean :              0.464912   
 
 
     
@@ -337,10 +342,10 @@
 
 
 
-    Frame 1                          Frame 2
-    Type :	            Categorical	Type :	            Categorical
-    Distinct count :	63	        Distinct count :	102
-    Missed %:	        87.613843   Missed %:	        60.233918    
+    Frame 1                         Frame 2
+    Type :              Categorical Type :              Categorical
+    Distinct count :    63          Distinct count :    102
+    Missed %:           87.613843   Missed %:           60.233918    
 
 
     
@@ -372,11 +377,11 @@
 ![png](output_12_88.png)
 
 
-            Frame 1	                    Frame 2
-            Missing	% of Total	        Missing	     % of Total
-            Cabin  481	 87.600000	    Cabin	    206	60.200000
-            Age	125	     22.800000      Age	        52	15.200000
-                                        Embarked	2	0.600000       
+            Frame 1                     Frame 2
+                  Missing % of Total            Missing      % of Total
+            Cabin  481      87.600000   Cabin      206         60.200000
+            Age    125      22.800000   Age        52          15.200000
+                                        Embarked   2           0.600000       
      
      
 

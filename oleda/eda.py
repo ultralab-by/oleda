@@ -148,7 +148,7 @@ def plot_stats(df,feature,target,max_nbr=20,sort='Count '):
     s = sns.barplot(ax=ax2, x = feature, y=target, order=cat_perc[feature][:max_nbr], data=cat_perc[:max_nbr])  
     s.set_xticklabels(s.get_xticklabels(),rotation=90)
         
-    pls.ylabel('Percent ', fontsize=10)
+    pls.ylabel(target, fontsize=10)
     pls.tick_params(axis='both', which='major', labelsize=10)
 
     pls.show();

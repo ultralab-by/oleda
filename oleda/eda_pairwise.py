@@ -38,8 +38,8 @@ def pairwise_report(df1,df2,target=None,ignore=[],nbrmax=20,full=True):
         
         #print sum of targed variable per day for both frames side by side
         #pairwise_feature_sum_per_day(df1,df2,target)
-    else:
-        print('Index is not datetime - skip')
+    #else:
+        #print('Index is not datetime - skip')
 
     #print each feature stat
     header('Features info' )

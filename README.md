@@ -57,13 +57,11 @@ see  [Titanic dataset pairwise report example](README_files/Titanic_report_pairw
 
 All examples can be found in [jupiter notebook ](https://github.com/Banuba/oleda/blob/1ea82833d355a1cd45f52ea9376973600488629e/example/Titanic-oleda.ipynb)
 
-
+<hr>
 
 plots description:
 
 1. number and persent of missed values per feature:
-
-<h2 align="center">Missed values</h2>
       
               Missing Values  % of Total Values
     Cabin                687               77.1
@@ -71,28 +69,44 @@ plots description:
     Embarked               2                0.2
 
 2. plots for categorical features:
-- histogram , representation of the distribution of feature
+- histogram , representation of the feature distribution 
+
 ![](README_files/output_2_10.png)
+
 - pair plot of 10 most correlated features, which significantly varies ( ANOVA ) on values of this categorecal feature, colored according to features values:
+
 ![](README_files/output_2_19.png)
+
 - if target feature is set (for example 'Survived' ) then barplot with target mean on feature values is displayed side by side with feature histogram
+
 ![](README_files/output_3_25.png)
+
 etc
 
 3. plots for numerical features:
-- distribution plot and box plot are displayed:
+- distribution plot and box plot :
+
 ![](README_files/output_2_52.png)
-- if target feature is set , scatter plot and violine (if target is binary ) or catplot are added (depends on target type):
+
+- if target feature is set , scatter plot and violine (if target is binary ) or catplot are added 
+(depends on target type):
+
 ![](README_files/output_33_38.png)
+
 ![](README_files/output_4_17.png)
-- variables also are splited on bins based on quantiles and plotted against target:
+
+- continues variables are splited on bins based on quantiles and plotted against target:
+
 ![](README_files/output_4_23.png)
+
 ![](README_files/output_4_24.png)
  
 4. feature correllation heatmap
+
 ![](README_files/output_2_74.png)
 
 5. Cramers V staticstics
+
 ![](README_files/output_2_79.png)
 
 to compare survived not survived subsets of Titanic dataset one can run:
@@ -108,11 +122,13 @@ result will contain plots like:
 - features plots from both dasets side by side:
 ![](README_files/output_7_24.png)
 
-and more...
+[and more...](README_files/Titanic_report_pairwise.md)
+
+<hr>
 
 to create 2nd order interactions plots:
 ```python 
-eda.interactions2x(df,maxnbr=6)
+oleda.interactions2x(df,maxnbr=6)
 ```
 oleda will check categorical varibles and binned numerical against the numerical varibles by ANOVA
 and in case if diffrence in means is significant, display plots and Tukey's HSD (honestly significant difference) test results
@@ -135,6 +151,8 @@ and pairplots of 10 most correlated features colored by maxnbr most common categ
 
 maxnbr - max feature values to test and plot (affects speed)
 
+[full Titanic dataset example](README_files/Titanic_2x.md)
+
 to create 3nd order interactions plots:
 ```python 
 oleda.interactions3x(df,maxnbr=6)
@@ -143,6 +161,8 @@ oleda.interactions3x(df,maxnbr=6)
 ![](README_files/output_5_209.png)
 
 etc
+
+[full Titanic dataset example](README_files/Titanic_3x.md)
 
 or to check specific features only:
 
