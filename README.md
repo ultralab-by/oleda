@@ -26,9 +26,11 @@ report contains:
 - missing values statistics
 - information on each feature relevant for the feature type
 - pearson correlation heatmap
-- Cramers V staticstics (https://stackoverflow.com/a/46498792/5863503)
+- [Cramers V staticstics](https://stackoverflow.com/a/46498792/5863503)
 - pair plot for most correlated features
 - if dataframe index is valid datetime index, time series plots are added to the report
+
+[Titanic dataset report example](README_files/Titanic_report.md)
 
 dataset can be tested against an target variable (binary (0,1) or continues):  
 
@@ -36,7 +38,7 @@ dataset can be tested against an target variable (binary (0,1) or continues):
 oleda.report(df,target,ignore=[],nbrmax=20)
 ```
 in this case plots that show correlation with targed are added for each feature
-features are sorterted according to their impotantce by shap (https://github.com/slundberg/shap)
+features are sorterted according to their impotantce by [shap](https://github.com/slundberg/shap)
 nbrmax number of most important features selected by shap to be explored
 features need to be ignored can be added in ignore list 
 
@@ -48,7 +50,7 @@ first oleda find by shap most significant features that distinguish these datase
 then prints their statistics side by side to show the difference
 
 Example using Titanic dataset :
-https://github.com/Banuba/oleda/blob/1ea82833d355a1cd45f52ea9376973600488629e/example/Titanic-oleda.ipynb
+[jupiter notebook ](https://github.com/Banuba/oleda/blob/1ea82833d355a1cd45f52ea9376973600488629e/example/Titanic-oleda.ipynb)
 
 plots description:
 
@@ -92,7 +94,7 @@ to compare survived not survived subsets of Titanic dataset one can run:
 oleda.pairwise_report(df[df['Survived']==0],df[df['Survived']==1],ignore=['Survived'])
 ```
 result will contain plots like:
-- shap importance information (https://github.com/slundberg/shap)
+- [shap importance information](https://github.com/slundberg/shap)
 
 ![](README_files/output_7_4.png)
 ![](README_files/output_7_5.png)
