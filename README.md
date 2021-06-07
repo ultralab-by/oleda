@@ -17,7 +17,7 @@ to install oleda:
 Examples/Usage
 --------
 
-to explore single dataset and create report just type:
+1. to explore single dataset and create report just type:
 ```python
 import oleda
 oleda.report(df)
@@ -32,7 +32,7 @@ report contains:
 
 see  [Titanic dataset report example](README_files/Titanic_report.md)
 
-dataset can be tested against an target variable (binary (0,1) or continues):  
+2. dataset can be tested against an target variable (binary (0,1) or continues):  
 
 ```python
 oleda.report(df,target,ignore=[],nbrmax=20)
@@ -44,13 +44,9 @@ features need to be ignored can be added in ignore list
 
 see  [Titanic dataset report example with 'Survived' target](README_files/Titanic_report_tg.md)
 
-also two datasets can be compared:
+3. two datasets can be compared:
 ```python   
 oleda.pairwise_report(df1,df2,ignore=[],nbrmax=20)
-```
-
-```python
-oleda.pairwise_report(df[df['Survived']==0],df[df['Survived']==1],ignore=['Survived'])
 ```
 
 first oleda find by shap most significant features that distinguish these datasets
