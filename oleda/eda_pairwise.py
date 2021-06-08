@@ -72,6 +72,7 @@ def print_features(df1,df2,target=None,sorted_features=[]):
             continue
         print('\n ')
         
+        
         info1 = pd.DataFrame(
                 index=['Type :' ,'Distinct count :', 'Missed %:'],
                 columns=[' '])
@@ -83,6 +84,7 @@ def print_features(df1,df2,target=None,sorted_features=[]):
         display(HTML("<h3 align=\"center\">{}</h3>".format(feature)))
         print('\n ') 
         info1[' '] = get_feature_info(df1,feature)
+        
         if info1.iloc[0,0]=='Numeric':
             info1.loc['Mean :',' ']=df1[feature].mean()
         
@@ -92,6 +94,7 @@ def print_features(df1,df2,target=None,sorted_features=[]):
 
         display_side_by_side([info1.head(),info2.head()],['Frame 1','Frame 2'])
         print('\n ') 
+
         
         if info1.iloc[0,0]=='Categorical' or info1.iloc[0,0]=='Boolean':
             if info1.iloc[1,0]>df1.shape[0]/2.0 :

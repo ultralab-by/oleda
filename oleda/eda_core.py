@@ -213,7 +213,7 @@ def header(title,sz='h2'):
 # features 
 #=====================#=====================#=====================#=====================
 
-def get_feature_type(dtype):
+def get_feature_type_(dtype):
     if dtype in [np.int16, np.int32, np.int64, np.float16, np.float32, np.float64]:
         return 'Numeric'
     elif isTime(dtype):
@@ -221,13 +221,23 @@ def get_feature_type(dtype):
     elif dtype in [np.bool]:
         return 'Boolean'
     else:
-        return 'Categorical'    
+        return 'Categorical'   
+        
+def get_feature_type(s):
+    if s.dtype in [np.int16, np.int32, np.int64, np.float16, np.float32, np.float64]:
+        return 'Numeric'
+    elif isTime(s.dtype):
+        return 'Time'
+    elif s.dtype in [np.bool] or len(set(s.dropna().unique()) - set([False,True]))==0:
+        return 'Boolean'
+    else:
+        return 'Categorical' 
     
 def get_feature_info(df,feature):
     if feature in df.columns:
-        cardinality = len(df[feature].unique())
+        cardinality = df[feature].nunique()
         missed= 100 * df[feature].isnull().sum() / df.shape[0]
-        feature_type = get_feature_type(df[feature].dtype)
+        feature_type = get_feature_type(df[feature])
         return [feature_type,cardinality,missed]
     else:
         return "","",""

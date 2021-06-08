@@ -253,7 +253,7 @@ def corr_2x(df,features_x,features_y,figsize=(20,20)):
 def print_features(df,target=None,sorted_features=[]):
 
     #explore features selected by shap (sorted_features)
-    features = sorted_features if len(sorted_features)>0 else list(set(df.columns.to_list()))
+    features = sorted_features if len(sorted_features)>0 else df.columns.to_list()
 
     _,tg_cardinality,_ = get_feature_info(df,target)
    
@@ -274,6 +274,11 @@ def print_features(df,target=None,sorted_features=[]):
                                                                    
         feature_type,cardinality,missed = get_feature_info(df,feature)
 
+        #all nans
+        if cardinality<1:
+            print ('No values but nan')
+            continue
+            
         info = pd.DataFrame(
         index=['Type :' ,'Distinct count :', 'Missed %:'],
         columns=[' '])       
@@ -297,7 +302,7 @@ def print_features(df,target=None,sorted_features=[]):
                     plot_stats(df,feature,target,30)
                 elif cardinality<=40:
                     fig,ax =  pls.subplots(1, 1,figsize=(9, 5))
-                    df[feature].hist()
+                    df[feature].astype('str').hist()
                     pls.xticks(rotation='vertical')
                     pls.show()
                 else:
@@ -351,6 +356,12 @@ def print_features(df,target=None,sorted_features=[]):
         #---------------- Numeric    
         
         elif feature_type=='Numeric':
+            info = pd.DataFrame(
+            index=['dType :' ,'Min :', 'Max :', 'Mean :', 'Std :'],
+            columns=[' '])       
+            info[' ']=[df[feature].dtype,df[feature].min(),df[feature].max(),df[feature].mean(),df[feature].std() ]
+            print(info.head())
+            print('\n ')
             #pairwise_feature_sum_per_day(df1,df2,feature)
             #pairwise_feature_mean_per_day(df1,df2,feature)
             if cardinality<=40:
@@ -411,6 +422,12 @@ def print_features(df,target=None,sorted_features=[]):
                         
                        
         else:
+            info = pd.DataFrame(
+            index=['dType :' ,'Min :', 'Max :'],
+            columns=[' '])       
+            info[' ']=[df[feature].dtype,df[feature].min(),df[feature].max()]
+            print(info.head())
+            print('\n ')
             
             print("Time column skip plotting ")
             
@@ -420,18 +437,20 @@ def do_eda(df,target,ignore=[],nbrmax=20,figsize=(20,4),linewidth=2):
     #detect time columns
     df = df.apply(lambda col: safe_convert(col) if col.dtypes == object else col, axis=0)
     
+    #print nans statistics
     header('Missed values' )
     print_na(df)
                       
     #print shap values for each frame predicting targed
     feature_type,cardinality,missed = get_feature_info(df,target)
     
-    if feature_type=='Numeric' :#and cardinality==2:
+    if feature_type=='Numeric' :
         header('Shap values')
-
         sorted_features=plot_shap(df,target,ignore=ignore,nbrmax=nbrmax)[:nbrmax]
     else:
-        sorted_features=list(set(df.columns.tolist())-set(ignore))
+        sorted_features=[f for f in df.columns.tolist() if f not in ignore]
+        #list(set(df.columns.tolist())-set(ignore))
+
 
     # if dataframe has timedate index - plot time series
     if target !=None and  isTime(df.index.dtype) and df.index.nunique()> 2:
@@ -484,7 +503,7 @@ def interactions2x(ddf,feature=[],target=[],maxnbr=4):
             print('Warning: dataframe contains nan or inf , please fix or drop them to obtain better results. \n')
             df=df.fillna(0)
     
-    features = list(set(df.columns.to_list())) if len(feature)==0 else feature
+    features =  df.columns.to_list() if len(feature)==0 else feature
    
     candidates=[]
     numeric=target.copy()
@@ -566,7 +585,7 @@ def interactions3x(ddf,feature=[],target=[],verbose=False,maxnbr=6):
             print('Warning: dataframe contains nan or inf , please fix or drop them to obtain better results. \n')
             df=df.fillna(0)
     
-    features = list(set(df.columns.to_list())) if len(feature)==0 else feature
+    features = df.columns.to_list() if len(feature)==0 else feature
    
     candidates=[]
     numeric=target.copy()
