@@ -57,7 +57,7 @@ importlib-metadata==1.7.0
 importlib-resources==1.5.0
 inflection==0.5.1
 ipykernel==5.4.3
-ipython==7.19.0
+ipython==7.25.0
 ipython-genutils==0.2.0
 iso8601==0.1.14
 itsdangerous==1.1.0
